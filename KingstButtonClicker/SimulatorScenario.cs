@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
-using WindowsInput;
-using System.Diagnostics;
+using WindowsInput;   
 using System.Threading;
-using System.Runtime.InteropServices;
+using System.Runtime.Serialization;           
 
 namespace KingstButtonClicker
 {
@@ -19,6 +18,7 @@ namespace KingstButtonClicker
         Sleep
     }
 
+    [DataContract]
     public class SimulatorScenario
     {
         private static InputSimulator simulatorInstance = new InputSimulator();
@@ -37,7 +37,7 @@ namespace KingstButtonClicker
 
         public static void WaitForPixel(Point p, Color c)
         {
-            while (NativeImports.GetPixelColor(p) != c)
+            while (Native.GetPixelColor(p) != c)
             {
                 Thread.Sleep(100);
             }
@@ -48,11 +48,6 @@ namespace KingstButtonClicker
             Thread.Sleep(ms);
         }
 
-        public static IntPtr FindWindow(string search)
-        {
-            return Process.GetProcesses().First(x => x.MainWindowTitle.Contains(search)).MainWindowHandle;
-        }
-
         #endregion
 
         public SimulatorScenario(params SimulatorAction[] a)
@@ -60,29 +55,50 @@ namespace KingstButtonClicker
             Actions = a;
         }
 
-        public SimulatorAction[] Actions { get; }
+        [DataMember]
+        public SimulatorAction[] Actions { get; private set; }
 
-        public void Execute()
+        public int Execute()
         {
-            for (int i = 0; i < Actions.Length; i++)
+            IntPtr hWnd = IntPtr.Zero;
+            try
             {
-                switch (Actions[i].Type)
+                hWnd = Native.FindWindowByCaption(Program.WindowSearchString);
+            }
+            catch (Exception ex)
+            {
+                ErrorListener.Add(ex);
+            }
+            if (hWnd == IntPtr.Zero) return 1;
+            try
+            {
+                for (int i = 0; i < Actions.Length; i++)
                 {
-                    case ActionTypes.MouseClick:
-                        break;
-                    case ActionTypes.PressKey:
-                        break;
-                    case ActionTypes.WaitForPixel:
-                        break;
-                    case ActionTypes.Sleep:
-                        break;
-                    default:
-                        break;
+                    switch (Actions[i].Type)
+                    {
+                        case ActionTypes.MouseClick:
+                            break;
+                        case ActionTypes.PressKey:
+                            break;
+                        case ActionTypes.WaitForPixel:
+                            break;
+                        case ActionTypes.Sleep:
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                ErrorListener.Add(ex);
+                return 2;
+            }
+            return 0;
         }
     }
 
+    [DataContract]
     public class SimulatorAction
     {
         public SimulatorAction(ActionTypes t, params object[] a)
@@ -91,7 +107,9 @@ namespace KingstButtonClicker
             Arguments = a;
         }
 
-        public ActionTypes Type { get; }
-        public object[] Arguments { get; }
+        [DataMember]
+        public ActionTypes Type { get; private set; }
+        [DataMember]
+        public object[] Arguments { get; private set; }
     }
 }

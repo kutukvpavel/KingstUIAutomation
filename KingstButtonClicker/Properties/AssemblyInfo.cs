@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // Управление общими сведениями о сборке осуществляется с помощью 
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
-[assembly: AssemblyTitle("KingstButtonClicker")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("UI Automation Tool")]
+[assembly: AssemblyDescription("Automatic UI clicker originally developed for automation of KingstVIS logic analyzer software.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("MDC")]
 [assembly: AssemblyProduct("KingstButtonClicker")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyCopyright("Copyright © Kutukov Pavel 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

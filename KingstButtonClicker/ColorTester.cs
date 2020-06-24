@@ -9,26 +9,51 @@ namespace KingstButtonClicker
 {
     public class ColorTester
     {
-        public ColorTester(params ColorTestPoint[] p)
+        public ColorTester(params ClickPoint[] p)
         {
             Points = p;
         }
 
-        public ColorTestPoint[] Points { get; }
+        public ClickPoint[] Points { get; }
 
         public string GetReport()
         {
+            IntPtr hWnd = IntPtr.Zero;
+            try
+            {
+                hWnd = Native.FindWindowByCaption(Program.WindowSearchString);
+            }
+            catch (Exception ex)
+            {
+                ErrorListener.Add(ex);
+            }
+            if (hWnd == IntPtr.Zero) return "Window not found!";
+            Rectangle window = new Rectangle();
+            try
+            {
+                window = Native.GetWindowRectangle(hWnd);
+            }
+            catch (Exception ex)
+            {
+                ErrorListener.Add(ex);
+            }
+            if (window.IsEmpty) return "The client rectangle is empty!";
             StringBuilder res = new StringBuilder();
             for (int i = 0; i < Points.Length; i++)
             {
-
+                try
+                {
+                    Color c = Native.GetPixelColor(Points[i].Coordinates.GetDesktopPoint(window));
+                    res.AppendFormat("{0} = {1}", Points[i].Name, c.ToString());
+                }
+                catch (Exception ex)
+                {
+                    ErrorListener.Add(ex);
+                    res.AppendFormat("{0} = Error: {1}", Points[i].Name, ex.Message);
+                }
+                res.AppendLine();
             }
+            return res.ToString();
         }
-    }
-
-    public struct ColorTestPoint
-    {
-        public Point Coordinates { get; }
-        public string Name { get; }
     }
 }
