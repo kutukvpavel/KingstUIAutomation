@@ -30,5 +30,10 @@ namespace KingstButtonClicker
         {
             Value = txtInput.Text;
         }
+
+        private void InputBox_Shown(object sender, EventArgs e)
+        {
+            txtInput.Focus();
+        }
     }
 }

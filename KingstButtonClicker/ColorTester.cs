@@ -43,7 +43,7 @@ namespace KingstButtonClicker
             {
                 try
                 {
-                    Color c = Native.GetPixelColor(Points[i].Coordinates.GetDesktopPoint(window));
+                    Color c = Native.GetPixelColor(Points[i].GetPoint(PointReference.TopLeft, window));
                     res.AppendFormat("{0} = {1}", Points[i].Name, c.ToString());
                 }
                 catch (Exception ex)

@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using WindowsInput;
 
 namespace KingstButtonClicker
 {
@@ -16,10 +14,24 @@ namespace KingstButtonClicker
         {
             InitializeComponent();
         }
+        private void PrintDatabase()
+        {
+            txtOutput.AppendText(Environment.NewLine);
+            txtOutput.AppendText("Database contents:" + Environment.NewLine);
+            txtOutput.AppendText(string.Join(Environment.NewLine, Program.Database.Select(x => string.Format("{0} = {1} ({2})",
+                x.Name, x.RawPoint.ToString(), Enum.GetName(typeof(PointReference), x.RawReference)))));
+            txtOutput.AppendText(Environment.NewLine);
+        }
 
         private void testColorsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            var tester = new ColorTester(Program.Database.ToArray());
+            txtOutput.AppendText("Current colors of database points:" + Environment.NewLine);
+            Hide();
+            System.Threading.Thread.Sleep(500);
+            txtOutput.AppendText(tester.GetReport());
+            Show();
+            txtOutput.AppendText(Environment.NewLine);
         }
 
         private void recordPointsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -29,14 +41,12 @@ namespace KingstButtonClicker
             form.ShowDialog();
             Show();
             Program.Database.AddRange(form.Points);
-            txtOutput.AppendText("Database contents:");
-            txtOutput.AppendText(string.Join(Environment.NewLine, Program.Database.Select(x => string.Format("{0} = {1} ({2})", 
-                x.Name, x.Coordinates.RawPoint.ToString(), Enum.GetName(typeof(PointReference), x.Coordinates.RawReference)))));
+            PrintDatabase();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Application.Exit();
+            
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -64,6 +74,56 @@ namespace KingstButtonClicker
             {
                 form.ShowDialog();
             }
+        }
+
+        private void saveCurrentDatabaseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Serialization.WriteDatabase(Program.Database);
+        }
+
+        private void clearCurrentDatabaseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Program.Database.Clear();
+        }
+
+        private void editScenarioToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start(Serialization.ScenarioPath);
+        }
+
+        private void editDatabasemanualToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start(Serialization.DatabasePath);
+        }
+
+        private void updateDatabaseFromFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Program.Database = Serialization.ReadDatabase(Program.Database);
+            PrintDatabase();
+        }
+
+        private void executeScenarioToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Hide();
+            Program.Scenario.Execute();
+            Show();
+        }
+
+        private void moveMouseToToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var inputBox = new InputBox();
+            if (inputBox.ShowDialog() == DialogResult.OK)
+            {
+                int[] parsed = inputBox.Value.Split('x').Select(x => int.Parse(x)).ToArray();
+                /*var instance = new InputSimulator();
+                instance.Mouse.MoveMouseToPositionOnVirtualDesktop(0, 0).MoveMouseBy(parsed[0], parsed[1]);*/
+                Native.SetCursorPosition(new Point(parsed[0], parsed[1]));
+            }
+        }
+
+        private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
         }
     }
 }

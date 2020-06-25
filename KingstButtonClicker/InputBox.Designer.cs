@@ -110,6 +110,7 @@
             this.Text = "InputBox";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.InputBox_FormClosing);
             this.Load += new System.EventHandler(this.InputBox_Load);
+            this.Shown += new System.EventHandler(this.InputBox_Shown);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
             this.ResumeLayout(false);

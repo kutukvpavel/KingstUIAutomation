@@ -20,98 +20,33 @@ namespace KingstButtonClicker
         public static void Main()
         {
             //Prepare serialized objects
-            ReadDatabase(Path.Combine(Environment.CurrentDirectory, DatabaseFileName));
+            Database = Serialization.ReadDatabase(Database);
+            Scenario = Serialization.ReadScenario(Scenario);
+            WindowSearchString = Serialization.ReadWindowTitle(WindowSearchString);
             //Start WinForms
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
         }
 
-        public static string WindowSearchString = "LA1010 Connected - KingstVIS";
-        public static readonly string DatabaseFileName = "database.xml";
-        public static readonly string LogFileName = "log.txt";
+        public const string WindowTitleFileName = "title.txt";
+        public const string DatabaseFileName = "database.xml";
+        public const string ScenarioFileName = "scenario.xml";
 
+        public static string WindowSearchString = "LA1010 Connected - KingstVIS";
         public static PointDatabase Database = new PointDatabase()
         {
-            new ClickPoint(0, 0, PointReference.TopLeft, "Start")
+            new ClickPoint(0, 0, PointReference.TopLeft, "Origin")
         };
-
-
-        public static void WriteDatabase(string path)
-        {
-            //Backup data just in case
-            try
-            {
-                File.Copy(path, Path.ChangeExtension(path, "bak"), true);
-            }
-            catch (Exception ex)
-            {
-                ErrorListener.Add(ex);
-                if (MessageBox.Show("Failed to backup current database. Continue anyway?",
-                    Application.ProductName, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No) return;
-            }
-            //Serialize
-            try
-            {
-                using (var fs = new FileStream(path, FileMode.Create))
-                using (var writer = XmlDictionaryWriter.CreateTextWriter(fs))
-                {
-                    DataContractSerializer ser = new DataContractSerializer(typeof(PointDatabase));
-                    try
-                    {
-                        ser.WriteObject(writer, Database);
-                    }
-                    catch (Exception ex)
-                    {
-                        ErrorListener.Add(ex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorListener.Add(ex);
-            }
-
-        }
-        public static void ReadDatabase(string path)
-        {
-            try
-            {
-                if (!File.Exists(path))
-                {
-                    MessageBox.Show("No database file present! Using default settings.");
-                    return;
-                }
-                using (FileStream fs = new FileStream(path, FileMode.OpenOrCreate))
-                using (XmlDictionaryReader reader = XmlDictionaryReader.CreateTextReader(fs, new XmlDictionaryReaderQuotas()))
-                {
-                    DataContractSerializer ser = new DataContractSerializer(typeof(PointDatabase));
-                    try
-                    {
-                        Database = (PointDatabase)ser.ReadObject(reader);
-                    }
-                    catch (Exception ex)
-                    {
-                        ErrorListener.Add(ex);
-                        MessageBox.Show("Failed to deserialize the database. The application will now terminate.",
-                            Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        Environment.Exit(1);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorListener.Add(ex);
-                MessageBox.Show("Failed to open the database file. The application will now terminate.",
-                    Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Environment.Exit(2);
-            }
-        }
+        public static SimulatorScenario Scenario = new SimulatorScenario(
+            new SimulatorAction(ActionTypes.MouseClick, "Origin"),
+            new SimulatorAction(ActionTypes.Sleep, 500)
+            );
     }
 
     public static class ErrorListener
     {
-        static List<Exception> data = new List<Exception>();
+        public static readonly string LogFileName = "log.txt";
 
         public static bool EnableMessages = true;
         public static bool EnableLog = true;
@@ -119,7 +54,8 @@ namespace KingstButtonClicker
         public static string LogDatetimeFormat = "G";
         public static string LogLineFormat = "{0} | {1}" + Environment.NewLine;
 
-        private static string logFilePath = Path.Combine(Environment.CurrentDirectory, Program.LogFileName);
+        private static string logFilePath = Path.Combine(Environment.CurrentDirectory, LogFileName);
+        private static List<Exception> data = new List<Exception>();
 
         public static void Add(Exception e)
         {
@@ -142,22 +78,9 @@ namespace KingstButtonClicker
             }
         }
 
-        public static string GetReport()
+        public static void AddFormat(Exception e, string f, params object[] args)
         {
-            Exception[] arr = null;
-            lock (LockObject)
-            {
-                arr = data.ToArray();
-                data.Clear();
-            }
-            StringBuilder res = new StringBuilder();
-            for (int i = 0; i < arr.Length; i++)
-            {
-                res.AppendLine(arr[i].Message);
-            }
-            return res.ToString();
-        }
-        
-         
+            Add(new Exception(string.Format(f, args), e));
+        } 
     }
 }

@@ -63,5 +63,13 @@ namespace KingstButtonClicker
                 throw new ExternalException("Can't get window rectangle, hWnd: " + handle.ToString());
             return new Rectangle(res.Left, res.Top, res.Right - res.Left, res.Bottom - res.Top);
         }
+
+        [DllImport("User32.dll")]
+        private static extern bool SetCursorPos(int X, int Y);
+
+        public static void SetCursorPosition(Point p)
+        {
+            SetCursorPos(p.X, p.Y);
+        }
     }
 }
