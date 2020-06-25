@@ -6,3 +6,5 @@ Since Kingst doesn't offer any API to control acquisition (and KingstVIS is a Qt
 Done: mouse movement/clicking. Screen point recorder and database engine (for maximized windows only!). Scenarios (they can be edited via serialization). Waiting for pixels to change color + pressing individual keys (not tested). Some GUI.
 
 Todo: Further testing, some simple calculations to account for non-maximized windows, GUI improvements.
+
+P.S. InputSimulatorPlus NuGet package is used for clicking and key pressing. However, it fails to move the mouse in the right way: somehow its pixel sizes always correspond to 800x600 effective resolution. Had to manually import WinAPI, SetCursorPos does the job perfectly.
