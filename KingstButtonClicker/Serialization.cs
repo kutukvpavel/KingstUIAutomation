@@ -25,17 +25,25 @@ namespace KingstButtonClicker
             if (File.Exists(p)) return File.ReadAllText(p);
             return defaultValue;
         }
+        public static void WriteDatabase(PointDatabase database, string path)
+        {
+            Write(path, database, typeof(PointDatabase), databaseKnown);
+        }
         public static void WriteDatabase(PointDatabase database)
         {
-            Write(DatabasePath, database, typeof(PointDatabase), databaseKnown);
+            WriteDatabase(database, DatabasePath);
         }
         public static PointDatabase ReadDatabase(PointDatabase defaultValue)
         {
             return (PointDatabase)Read(DatabasePath, defaultValue, typeof(PointDatabase), databaseKnown);
         }
+        public static void WriteScenario(SimulatorScenario scenario, string path)
+        {
+            Write(path, scenario, typeof(SimulatorScenario), scenarioKnown);
+        }
         public static void WriteScenario(SimulatorScenario scenario)
         {
-            Write(ScenarioPath, scenario, typeof(SimulatorScenario), scenarioKnown);
+            WriteScenario(scenario, ScenarioPath);
         }
         public static SimulatorScenario ReadScenario(SimulatorScenario defaultValue)
         {

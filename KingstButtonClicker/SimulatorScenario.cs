@@ -134,6 +134,16 @@ namespace KingstButtonClicker
     [DataContract]
     public class SimulatorAction
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="a">
+        /// For mouse click - the name of the point (in the database)
+        /// For key press - WindowsInput.Native.VirtualKeyCode
+        /// For sleep - int (ms)
+        /// For pixel color based waiting - point name and color (+ optional time limit)
+        /// </param>
         public SimulatorAction(ActionTypes t, params object[] a)
         {
             Type = t;

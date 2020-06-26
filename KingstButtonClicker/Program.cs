@@ -8,6 +8,7 @@ using System.Drawing;
 using System.IO;
 using System.Xml;
 using System.Runtime.Serialization;
+using System.Threading;
 
 namespace KingstButtonClicker
 {
@@ -32,8 +33,10 @@ namespace KingstButtonClicker
         public const string WindowTitleFileName = "title.txt";
         public const string DatabaseFileName = "database.xml";
         public const string ScenarioFileName = "scenario.xml";
+        public const string ExampleDatabaseName = "example_database.xml";
+        public const string ExampleScenarioName = "example_scenario.xml";
 
-        public static string WindowSearchString = "LA1010 Connected - KingstVIS";
+        public static string WindowSearchString = "LA1010 Unconnected - KingstVIS";
         public static PointDatabase Database = new PointDatabase()
         {
             new ClickPoint(0, 0, PointReference.TopLeft, "Origin")
@@ -42,6 +45,37 @@ namespace KingstButtonClicker
             new SimulatorAction(ActionTypes.MouseClick, "Origin"),
             new SimulatorAction(ActionTypes.Sleep, 500)
             );
+
+        public static readonly PointDatabase ExampleDatabase = new PointDatabase()
+        {
+            new ClickPoint(0, 0, PointReference.TopLeft, "Origin")
+        };
+        public static readonly SimulatorScenario ExampleScenario = new SimulatorScenario(
+            new SimulatorAction(ActionTypes.MouseClick, "PointName"),
+            new SimulatorAction(ActionTypes.PressKey, WindowsInput.Native.VirtualKeyCode.RETURN),
+            new SimulatorAction(ActionTypes.WaitForPixel, "PointName", Color.FromArgb(255, 35, 35, 35)),
+            new SimulatorAction(ActionTypes.Sleep, 500)
+            );
+
+        private static CancellationTokenSource pipeCancellationToken;
+        private static Thread pipeOperationThread;
+
+        public static void StartPipeOperation()
+        {
+            pipeCancellationToken = new CancellationTokenSource();
+            pipeOperationThread = new Thread(() => 
+            {
+                PipeClient.Instance.DispatchPipe(pipeCancellationToken);
+            });
+        }
+        public static void StopPipeOperation()
+        {
+            pipeCancellationToken.Cancel();
+            pipeOperationThread.Join();
+            pipeCancellationToken.Dispose();
+            pipeCancellationToken = null;
+            pipeOperationThread = null;
+        }
     }
 
     public static class ErrorListener

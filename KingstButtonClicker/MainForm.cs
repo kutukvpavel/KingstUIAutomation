@@ -2,6 +2,7 @@
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using WindowsInput;
@@ -10,6 +11,7 @@ namespace KingstButtonClicker
 {
     public partial class MainForm : Form
     {
+
         public MainForm()
         {
             InitializeComponent();
@@ -42,11 +44,6 @@ namespace KingstButtonClicker
             Show();
             Program.Database.AddRange(form.Points);
             PrintDatabase();
-        }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -105,13 +102,14 @@ namespace KingstButtonClicker
         private void executeScenarioToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Hide();
-            Program.Scenario.Execute();
+            txtOutput.AppendText(Environment.NewLine + "Scenario exit code: ");
+            txtOutput.AppendText(Program.Scenario.Execute().ToString() + Environment.NewLine);
             Show();
         }
 
         private void moveMouseToToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var inputBox = new InputBox();
+            var inputBox = new InputBox() { Text = "Enter target coordinates (...x...):" };
             if (inputBox.ShowDialog() == DialogResult.OK)
             {
                 int[] parsed = inputBox.Value.Split('x').Select(x => int.Parse(x)).ToArray();
@@ -121,9 +119,68 @@ namespace KingstButtonClicker
             }
         }
 
-        private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        private void updateScenarioFromFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Program.Scenario = Serialization.ReadScenario(Program.Scenario);
+        }
+
+        private void showExampleScenarioToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string path = Path.Combine(Environment.CurrentDirectory, Program.ExampleScenarioName);
+                Serialization.WriteScenario(Program.ExampleScenario, path);
+                Process.Start(path); 
+            }
+            catch (Exception ex)
+            {
+                ErrorListener.Add(ex);
+            }
+        }
+
+        private void showExampleDatabaseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string path = Path.Combine(Environment.CurrentDirectory, Program.ExampleDatabaseName);
+                Serialization.WriteDatabase(Program.ExampleDatabase, path);
+                Process.Start(path);
+            }
+            catch (Exception ex)
+            {
+                ErrorListener.Add(ex);
+            }
+        }
+
+        private void enablePipeClientToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        {
+            //UI
+            var menuItems = Controls.OfType<ToolStripMenuItem>();
+            foreach (var item in menuItems)
+            {
+                item.Enabled = enablePipeClientToolStripMenuItem.Checked;
+            }
+            enablePipeClientToolStripMenuItem.Enabled = true;
+            executeToolStripMenuItem.Enabled = true;
+            //Pipes
+            if (enablePipeClientToolStripMenuItem.Checked)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+
+        private void loopThroughScenarioToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
