@@ -6,12 +6,12 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using WindowsInput;
+using KingstButtonClicker.Properties;
 
 namespace KingstButtonClicker
 {
     public partial class MainForm : Form
     {
-
         public MainForm()
         {
             InitializeComponent();
@@ -23,6 +23,12 @@ namespace KingstButtonClicker
             txtOutput.AppendText(string.Join(Environment.NewLine, Program.Database.Select(x => string.Format("{0} = {1} ({2})",
                 x.Name, x.RawPoint.ToString(), Enum.GetName(typeof(PointReference), x.RawReference)))));
             txtOutput.AppendText(Environment.NewLine);
+        }
+        private void LoadSettings()
+        {
+            enableLogToolStripMenuItem.Checked = Settings.Default.EnableLog;
+            enableMessagesToolStripMenuItem.Checked = Settings.Default.EnableMessages;
+            enablePipeClientToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
         }
 
         private void testColorsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -170,17 +176,28 @@ namespace KingstButtonClicker
             //Pipes
             if (enablePipeClientToolStripMenuItem.Checked)
             {
-
+                Program.StartPipeOperation();
             }
             else
             {
-
+                Program.StopPipeOperation();
             }
         }
 
         private void loopThroughScenarioToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            //Not implemented
+        }
 
+        private void enableMessagesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Settings.Default.EnableMessages = enableLogToolStripMenuItem.Checked;
+            ErrorListener.EnableMessages = enableLogToolStripMenuItem.Checked;
+        }
+
+        private void enablePipeOnStartupToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Settings.Default.EnablePipeClient = enablePipeOnStartupToolStripMenuItem.Checked;
         }
     }
 }

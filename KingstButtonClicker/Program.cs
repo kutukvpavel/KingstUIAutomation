@@ -9,6 +9,7 @@ using System.IO;
 using System.Xml;
 using System.Runtime.Serialization;
 using System.Threading;
+using KingstButtonClicker.
 
 namespace KingstButtonClicker
 {
@@ -24,10 +25,19 @@ namespace KingstButtonClicker
             Database = Serialization.ReadDatabase(Database);
             Scenario = Serialization.ReadScenario(Scenario);
             WindowSearchString = Serialization.ReadWindowTitle(WindowSearchString);
+            //Init pipeline
+            PipeClient.Instance.CommandReceived += Instance_CommandReceived;
             //Start WinForms
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
+        }
+        private static void LoadSettings()
+        {
+            if ()
+            {
+
+            }
         }
 
         public const string WindowTitleFileName = "title.txt";
@@ -62,6 +72,7 @@ namespace KingstButtonClicker
 
         public static void StartPipeOperation()
         {
+            ErrorListener.EnableMessages = false;
             pipeCancellationToken = new CancellationTokenSource();
             pipeOperationThread = new Thread(() => 
             {
@@ -75,6 +86,22 @@ namespace KingstButtonClicker
             pipeCancellationToken.Dispose();
             pipeCancellationToken = null;
             pipeOperationThread = null;
+            ErrorListener.EnableMessages = Properties.Settings.Default.EnableMessages;
+        }
+        private static void Instance_CommandReceived(object sender, PipeEventArgs e)
+        {
+            switch (e.Request)
+            {   
+                case PipeCommands.ExecuteScript:
+                    e.Response = (byte)Scenario.Execute();
+                    break;
+                case PipeCommands.LoopScript:   //Not implemented
+                    break;
+                case PipeCommands.StopScript:
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
