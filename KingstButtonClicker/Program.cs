@@ -1,15 +1,10 @@
-﻿using System;
+﻿using KingstButtonClicker.Properties;
+using NamedPipeWrapper;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
-using System.Xml;
-using System.Runtime.Serialization;
-using System.Threading;
-using KingstButtonClicker.
+using System.Windows.Forms;
 
 namespace KingstButtonClicker
 {
@@ -21,23 +16,29 @@ namespace KingstButtonClicker
         [STAThread]
         public static void Main()
         {
+            LoadSettings();
             //Prepare serialized objects
             Database = Serialization.ReadDatabase(Database);
             Scenario = Serialization.ReadScenario(Scenario);
             WindowSearchString = Serialization.ReadWindowTitle(WindowSearchString);
             //Init pipeline
-            PipeClient.Instance.CommandReceived += Instance_CommandReceived;
+            pipeClient = new NamedPipeClient<string>(PipeName);
+            pipeClient.ServerMessage += PipeClient_ServerMessage;
             //Start WinForms
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
         }
+
+        private static void PipeClient_ServerMessage(NamedPipeConnection<string, string> connection, string message)
+        {
+            pipeClient.PushMessage(Scenario.Execute().ToString());
+        }
+
         private static void LoadSettings()
         {
-            if ()
-            {
-
-            }
+            ErrorListener.EnableMessages = Settings.Default.EnableMessages;
+            ErrorListener.EnableLog = Settings.Default.EnableLog;
         }
 
         public const string WindowTitleFileName = "title.txt";
@@ -45,6 +46,7 @@ namespace KingstButtonClicker
         public const string ScenarioFileName = "scenario.xml";
         public const string ExampleDatabaseName = "example_database.xml";
         public const string ExampleScenarioName = "example_scenario.xml";
+        public const string PipeName = "MyUIAutomationPipe";
 
         public static string WindowSearchString = "LA1010 Unconnected - KingstVIS";
         public static PointDatabase Database = new PointDatabase()
@@ -67,40 +69,16 @@ namespace KingstButtonClicker
             new SimulatorAction(ActionTypes.Sleep, 500)
             );
 
-        private static CancellationTokenSource pipeCancellationToken;
-        private static Thread pipeOperationThread;
-
-        public static void StartPipeOperation()
+        private static NamedPipeClient<string> pipeClient;
+        public static void SetPipeOperation(bool operate)
         {
-            ErrorListener.EnableMessages = false;
-            pipeCancellationToken = new CancellationTokenSource();
-            pipeOperationThread = new Thread(() => 
+            if (operate)
             {
-                PipeClient.Instance.DispatchPipe(pipeCancellationToken);
-            });
-        }
-        public static void StopPipeOperation()
-        {
-            pipeCancellationToken.Cancel();
-            pipeOperationThread.Join();
-            pipeCancellationToken.Dispose();
-            pipeCancellationToken = null;
-            pipeOperationThread = null;
-            ErrorListener.EnableMessages = Properties.Settings.Default.EnableMessages;
-        }
-        private static void Instance_CommandReceived(object sender, PipeEventArgs e)
-        {
-            switch (e.Request)
-            {   
-                case PipeCommands.ExecuteScript:
-                    e.Response = (byte)Scenario.Execute();
-                    break;
-                case PipeCommands.LoopScript:   //Not implemented
-                    break;
-                case PipeCommands.StopScript:
-                    break;
-                default:
-                    break;
+                pipeClient.Start();
+            }
+            else
+            {
+                pipeClient.Stop();
             }
         }
     }

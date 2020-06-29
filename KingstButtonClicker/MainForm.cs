@@ -7,6 +7,8 @@ using System.Linq;
 using System.Windows.Forms;
 using WindowsInput;
 using KingstButtonClicker.Properties;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace KingstButtonClicker
 {
@@ -28,7 +30,11 @@ namespace KingstButtonClicker
         {
             enableLogToolStripMenuItem.Checked = Settings.Default.EnableLog;
             enableMessagesToolStripMenuItem.Checked = Settings.Default.EnableMessages;
-            enablePipeClientToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
+            enablePipeOnStartupToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
+            if (Settings.Default.EnablePipeClient)
+            {
+                enablePipeClientToolStripMenuItem_Click(this, null);
+            }
         }
 
         private void testColorsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -109,7 +115,14 @@ namespace KingstButtonClicker
         {
             Hide();
             txtOutput.AppendText(Environment.NewLine + "Scenario exit code: ");
-            txtOutput.AppendText(Program.Scenario.Execute().ToString() + Environment.NewLine);
+            Task<int> exec = new Task<int>(delegate () { return Program.Scenario.Execute(); });
+            exec.Start();
+            while (!exec.IsCompleted)
+            {
+                Thread.Sleep(1);
+                Application.DoEvents();
+            }
+            txtOutput.AppendText(exec.Result.ToString() + Environment.NewLine);
             Show();
         }
 
@@ -163,41 +176,56 @@ namespace KingstButtonClicker
             }
         }
 
-        private void enablePipeClientToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+        private void enableLogToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
-            //UI
-            var menuItems = Controls.OfType<ToolStripMenuItem>();
-            foreach (var item in menuItems)
-            {
-                item.Enabled = enablePipeClientToolStripMenuItem.Checked;
-            }
-            enablePipeClientToolStripMenuItem.Enabled = true;
-            executeToolStripMenuItem.Enabled = true;
-            //Pipes
-            if (enablePipeClientToolStripMenuItem.Checked)
-            {
-                Program.StartPipeOperation();
-            }
-            else
-            {
-                Program.StopPipeOperation();
-            }
+            Settings.Default.EnableLog = enableLogToolStripMenuItem.Checked;
+            ErrorListener.EnableLog = enableLogToolStripMenuItem.Checked;
         }
 
-        private void loopThroughScenarioToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //Not implemented
-        }
-
-        private void enableMessagesToolStripMenuItem_Click(object sender, EventArgs e)
+        private void enableMessagesToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
             Settings.Default.EnableMessages = enableLogToolStripMenuItem.Checked;
             ErrorListener.EnableMessages = enableLogToolStripMenuItem.Checked;
         }
 
-        private void enablePipeOnStartupToolStripMenuItem_Click(object sender, EventArgs e)
+        private void enablePipeOnStartupToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
             Settings.Default.EnablePipeClient = enablePipeOnStartupToolStripMenuItem.Checked;
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            LoadSettings();
+        }
+
+        private void loopThroughScenarioToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Hide();
+            txtOutput.AppendText(Environment.NewLine + "Scenario loop exit code: ");
+            Task<int> exec = new Task<int>(delegate () { return Program.Scenario.Loop(); });
+            exec.Start();
+            while (!exec.IsCompleted)
+            {
+                Thread.Sleep(1);
+                Application.DoEvents();
+            }
+            txtOutput.AppendText(exec.Result.ToString() + Environment.NewLine);
+            Show();
+        }
+
+        private void enablePipeClientToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //UI
+            var menuItems = Controls.OfType<ToolStripMenuItem>();
+            foreach (var item in menuItems)
+            {
+                item.Enabled = false;
+            }
+            enablePipeClientToolStripMenuItem.Enabled = true;
+            executeToolStripMenuItem.Enabled = true;
+            Hide();
+            //Pipes
+            Program.SetPipeOperation(true);
         }
     }
 }

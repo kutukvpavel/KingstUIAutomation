@@ -70,6 +70,15 @@ namespace KingstButtonClicker
         [DataMember]
         public SimulatorAction[] Actions { get; private set; }
 
+        public int Loop()
+        {
+            while (!BreakOutPressed())
+            {
+                int r = Execute();
+                if (r != 0) return r;
+            }
+            return 0;
+        }
         public int Execute()
         {
             IntPtr hWnd = IntPtr.Zero;
@@ -128,6 +137,11 @@ namespace KingstButtonClicker
                 return 4;
             }
             return 0;
+        }
+
+        private bool BreakOutPressed()
+        {
+            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(WindowsInput.Native.VirtualKeyCode.RCONTROL);
         }
     }
 
