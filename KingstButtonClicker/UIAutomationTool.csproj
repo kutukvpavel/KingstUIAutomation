@@ -7,8 +7,8 @@
     <ProjectGuid>{5FCDEBD7-BA0B-44D6-B632-3D0F6DC32983}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>KingstButtonClicker</RootNamespace>
-    <AssemblyName>KingstButtonClicker</AssemblyName>
+    <RootNamespace>UIAutomationTool</RootNamespace>
+    <AssemblyName>UIAutomationTool</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -64,6 +64,7 @@
     </Compile>
     <Compile Include="ClickPoint.cs" />
     <Compile Include="ColorTester.cs" />
+    <Compile Include="ErrorListener.cs" />
     <Compile Include="InputBox.cs">
       <SubType>Form</SubType>
     </Compile>

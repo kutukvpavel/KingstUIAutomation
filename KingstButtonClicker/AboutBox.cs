@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     partial class AboutBox : Form
     {

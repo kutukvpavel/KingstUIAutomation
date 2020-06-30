@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using System.Drawing;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public enum PointReference
     {

@@ -78,6 +78,23 @@ namespace YaskawaEncoderListener
 
         public static void PipeCommandReceived(string cmd)
         {
+            try
+            {
+                ScenarioExitCodes code = (ScenarioExitCodes)int.Parse(cmd);
+
+            }
+            catch (FormatException)
+            {
+
+            }
+            catch (InvalidCastException)
+            {
+                
+            }
+        }
+
+        public static void Log(string txt)
+        {
 
         }
     }
@@ -87,5 +104,15 @@ namespace YaskawaEncoderListener
         public const string ExecuteScenario = "Exec";
         public const string LoopScenario = "Loop";
         public const string StopScenario = "Stop";
+    }
+
+    public enum ScenarioExitCodes
+    {
+        OK = 0,
+        WindowNotFound,
+        EmptyWindow,
+        WrongArguments,
+        Timeout,
+        UnexpectedError
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace KingstButtonClicker
+﻿namespace UIAutomationTool
 {
     partial class AboutBox
     {

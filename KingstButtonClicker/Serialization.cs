@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public static class Serialization
     {
@@ -17,12 +13,21 @@ namespace KingstButtonClicker
         public static readonly string ScenarioPath = Path.Combine(Environment.CurrentDirectory, Program.ScenarioFileName);
 
         private static readonly Type[] databaseKnown = new Type[] { typeof(Point), typeof(PointReference), typeof(ClickPoint) };
-        private static readonly Type[] scenarioKnown = new Type[] { typeof(SimulatorAction), typeof(ActionTypes), typeof(Color) };
+        private static readonly Type[] scenarioKnown = new Type[] 
+        { typeof(SimulatorAction), typeof(ActionTypes), typeof(Color), typeof(WindowsInput.Native.VirtualKeyCode) };
 
         public static string ReadWindowTitle(string defaultValue)
         {
             string p = Path.Combine(Environment.CurrentDirectory, Program.WindowTitleFileName);
-            if (File.Exists(p)) return File.ReadAllText(p);
+            if (File.Exists(p))
+            {
+                return File.ReadAllText(p);
+            }
+            else
+            {
+                if (MessageBox.Show("No window title file found. Continue with 'Example'?", Application.ProductName,
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No) throw new FileNotFoundException();
+            }
             return defaultValue;
         }
         public static void WriteDatabase(PointDatabase database, string path)
@@ -110,7 +115,7 @@ namespace KingstButtonClicker
                         ErrorListener.Add(ex);
                         MessageBox.Show("Failed to deserialize the database/scenario. The application will now terminate.",
                             Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        Environment.Exit(1);
+                        throw new SerializationException(); //This is fatal, terminate
                     }
                 }
             }
@@ -119,9 +124,13 @@ namespace KingstButtonClicker
                 ErrorListener.Add(ex);
                 MessageBox.Show("Failed to open the database/scenario file. The application will now terminate.",
                     Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Environment.Exit(2);
+                throw new IOException(); //This is fatal, terminate
             }
-            return null;  //Not really gonna reach here
         }
+    }
+
+    public class SerializationException : Exception
+    {
+
     }
 }

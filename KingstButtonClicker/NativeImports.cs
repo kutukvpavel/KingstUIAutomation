@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Drawing;
 using System.Diagnostics;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public static class Native
     {

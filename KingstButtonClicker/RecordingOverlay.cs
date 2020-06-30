@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public partial class RecordingOverlay : Form
     {

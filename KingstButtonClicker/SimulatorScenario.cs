@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
-using WindowsInput;
-using System.Threading;
-using System.Runtime.Serialization;
 using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Threading;
+using WindowsInput;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public enum ActionTypes
     {
@@ -17,6 +14,16 @@ namespace KingstButtonClicker
         PressKey,
         WaitForPixel,
         Sleep
+    }
+
+    public enum ScenarioExitCodes
+    {
+        OK = 0,
+        WindowNotFound,
+        EmptyWindow,
+        WrongArguments,
+        Timeout,
+        UnexpectedError
     }
 
     [DataContract]
@@ -40,7 +47,7 @@ namespace KingstButtonClicker
             simulatorInstance.Keyboard.KeyDown(code);
         }
 
-        public static void WaitForPixel(ClickPoint p, Rectangle w, Color c, int lim = 0)
+        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, int lim = 0)
         {
             Point d = p.GetPoint(PointReference.TopLeft, w);
             int cnt = 0;
@@ -50,9 +57,10 @@ namespace KingstButtonClicker
                 cnt += 100;
                 if (lim > 0)
                 {
-                    if (lim <= cnt) break;
+                    if (lim <= cnt) return false;
                 }
             }
+            return true;
         }
 
         public static void Sleep(int ms)
@@ -69,15 +77,23 @@ namespace KingstButtonClicker
 
         [DataMember]
         public SimulatorAction[] Actions { get; private set; }
+        [DataMember(EmitDefaultValue = true)]
+        public WindowsInput.Native.VirtualKeyCode LoopBreakKey { get; private set; } = WindowsInput.Native.VirtualKeyCode.RCONTROL;
+        [DataMember(EmitDefaultValue = true)]
+        public bool FailOnTimeout = true;
 
         public int Loop()
         {
-            while (!BreakOutPressed())
+            return Loop(null);
+        }
+        public int Loop(CancellationTokenSource cancel)
+        {
+            while (!BreakOutPressed() && (cancel == null ? true : !cancel.IsCancellationRequested))
             {
                 int r = Execute();
                 if (r != 0) return r;
             }
-            return 0;
+            return (int)ScenarioExitCodes.OK;
         }
         public int Execute()
         {
@@ -90,7 +106,7 @@ namespace KingstButtonClicker
             {
                 ErrorListener.Add(ex);
             }
-            if (hWnd == IntPtr.Zero) return 1;
+            if (hWnd == IntPtr.Zero) return (int)ScenarioExitCodes.WindowNotFound;
             Rectangle window = new Rectangle();
             try
             {
@@ -100,7 +116,7 @@ namespace KingstButtonClicker
             {
                 ErrorListener.Add(ex);
             }
-            if (window.IsEmpty) return 2;
+            if (window.IsEmpty) return (int)ScenarioExitCodes.EmptyWindow;
             try
             {
                 var dic = Program.Database.ToDictionary(x => x.Name);
@@ -115,9 +131,12 @@ namespace KingstButtonClicker
                             PressKey((WindowsInput.Native.VirtualKeyCode)Actions[i].Arguments[0]);
                             break;
                         case ActionTypes.WaitForPixel:
-                            WaitForPixel(dic[(string)Actions[i].Arguments[0]], window, (Color)Actions[i].Arguments[1],
-                                Actions[i].Arguments.Length > 2 ? (int)Actions[i].Arguments[2] : 0);
-                            break;
+                            {
+                                bool r = WaitForPixel(dic[(string)Actions[i].Arguments[0]], window, (Color)Actions[i].Arguments[1],
+                                    Actions[i].Arguments.Length > 2 ? (int)Actions[i].Arguments[2] : 0);
+                                if (FailOnTimeout && !r) throw new TimeoutException();
+                                break;
+                            }
                         case ActionTypes.Sleep:
                             Sleep((int)Actions[i].Arguments[0]);
                             break;
@@ -129,19 +148,24 @@ namespace KingstButtonClicker
             catch (InvalidCastException ex)
             {
                 ErrorListener.AddFormat(ex, "Wrong arguments specified for an action!");
-                return 3;
+                return (int)ScenarioExitCodes.WrongArguments;
+            }
+            catch (TimeoutException)
+            {
+                ErrorListener.Add(new Exception("Timed out during waiting for pixel color (FailOnTimeout is set to True)."));
+                return (int)ScenarioExitCodes.Timeout;
             }
             catch (Exception ex)
             {
                 ErrorListener.Add(ex);
-                return 4;
+                return (int)ScenarioExitCodes.UnexpectedError;
             }
-            return 0;
+            return (int)ScenarioExitCodes.OK;
         }
 
         private bool BreakOutPressed()
         {
-            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(WindowsInput.Native.VirtualKeyCode.RCONTROL);
+            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(LoopBreakKey);
         }
     }
 

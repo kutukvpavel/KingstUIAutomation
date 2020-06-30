@@ -7,13 +7,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
-    public enum PipeCommands : int
+    //Everything is now handled by PipeWrapper NuGet package, except command strings
+    public static class PipeCommands
     {
-        None,
-        ExecuteScript,
-        LoopScript,
-        StopScript
+        public const string ExecuteScenario = "Exec";
+        public const string LoopScenario = "Loop";
+        public const string StopScenario = "Stop";
     }
 }

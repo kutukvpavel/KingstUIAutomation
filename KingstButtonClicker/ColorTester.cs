@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public class ColorTester
     {

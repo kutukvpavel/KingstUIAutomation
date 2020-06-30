@@ -1,16 +1,15 @@
-﻿using System;
+﻿using UIAutomationTool.Properties;
+using System;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Windows.Forms;
-using WindowsInput;
-using KingstButtonClicker.Properties;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
-namespace KingstButtonClicker
+namespace UIAutomationTool
 {
     public partial class MainForm : Form
     {
@@ -37,12 +36,32 @@ namespace KingstButtonClicker
             }
         }
 
+        #region Form Events
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                Hide();
+            }
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            LoadSettings();
+        }
+
+        #endregion
+
+        #region Menu Events
+
         private void testColorsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var tester = new ColorTester(Program.Database.ToArray());
             txtOutput.AppendText("Current colors of database points:" + Environment.NewLine);
             Hide();
-            System.Threading.Thread.Sleep(500);
+            Thread.Sleep(500);
             txtOutput.AppendText(tester.GetReport());
             Show();
             txtOutput.AppendText(Environment.NewLine);
@@ -56,20 +75,6 @@ namespace KingstButtonClicker
             Show();
             Program.Database.AddRange(form.Points);
             PrintDatabase();
-        }
-
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (e.CloseReason == CloseReason.UserClosing)
-            {
-                e.Cancel = true;
-                Hide();
-            }
-        }
-
-        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
-        {
-            Show();
         }
 
         private void clearOutputToolStripMenuItem_Click(object sender, EventArgs e)
@@ -193,11 +198,6 @@ namespace KingstButtonClicker
             Settings.Default.EnablePipeClient = enablePipeOnStartupToolStripMenuItem.Checked;
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            LoadSettings();
-        }
-
         private void loopThroughScenarioToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Hide();
@@ -227,5 +227,16 @@ namespace KingstButtonClicker
             //Pipes
             Program.SetPipeOperation(true);
         }
+
+        #endregion
+
+        #region Other UI Events
+
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            Show();
+        }
+
+        #endregion
     }
 }

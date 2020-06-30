@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Automatic UI clicker originally developed for automation of KingstVIS logic analyzer software.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MDC")]
-[assembly: AssemblyProduct("KingstButtonClicker")]
+[assembly: AssemblyProduct("UIAutomationTool")]
 [assembly: AssemblyCopyright("Copyright © Kutukov Pavel 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
