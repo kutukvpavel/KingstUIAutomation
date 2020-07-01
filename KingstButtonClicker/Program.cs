@@ -29,7 +29,7 @@ namespace UIAutomationTool
         public const string ExampleScenarioName = "example_scenario.xml";
         public const string PipeName = "MyUIAutomationPipe";
 
-        public static string WindowSearchString = "Example";
+        public static string WindowTitleString = "Example";
         public static PointDatabase Database = new PointDatabase()
         {
             new ClickPoint(0, 0, PointReference.TopLeft, "Origin")
@@ -50,9 +50,6 @@ namespace UIAutomationTool
             new SimulatorAction(ActionTypes.Sleep, 500)
             )
         { };
-
-        private static Mutex instanceMutex = new Mutex(true, @"Global\{0}");
-        private static NamedPipeClient<string> pipeClient;
 
         #region Main
 
@@ -122,7 +119,7 @@ namespace UIAutomationTool
             //Prepare serialized objects
             Database = Serialization.ReadDatabase(Database);
             Scenario = Serialization.ReadScenario(Scenario);
-            WindowSearchString = Serialization.ReadWindowTitle(WindowSearchString);
+            WindowTitleString = Serialization.ReadWindowTitle(WindowTitleString);
             //Init pipeline
             pipeClient = new NamedPipeClient<string>(PipeName);
             pipeClient.ServerMessage += PipeClient_ServerMessage;
@@ -140,6 +137,8 @@ namespace UIAutomationTool
         #endregion
 
         #region Pipes
+        private static NamedPipeClient<string> pipeClient;
+        private static CancellationTokenSource pipeCancellation;
 
         public static void SetPipeOperation(bool operate)
         {
@@ -154,20 +153,25 @@ namespace UIAutomationTool
         }
         private static void PipeClient_ServerMessage(NamedPipeConnection<string, string> connection, string message)
         {
+            if (pipeCancellation != null) return;
             int res = -1;
             switch (message)
             {
                 case PipeCommands.ExecuteScenario:
-                    res = Scenario.Execute();
+                    pipeCancellation = new CancellationTokenSource();
+                    res = Scenario.Execute(pipeCancellation);
                     break;
                 case PipeCommands.LoopScenario:
-                    res = Scenario.Loop();
+                    pipeCancellation = new CancellationTokenSource();
+                    res = Scenario.Loop(pipeCancellation);
                     break;
                 case PipeCommands.StopScenario:
-
+                    pipeCancellation.Cancel();
+                    break;
                 default:
                     break;
             }
+            pipeCancellation = null;
             pipeClient.PushMessage(res.ToString());
         }
 

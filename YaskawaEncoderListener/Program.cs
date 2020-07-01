@@ -4,43 +4,69 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using NamedPipeWrapper;
+using System.Runtime.InteropServices;
+using System.Reflection;
+using System.IO;
 
 namespace YaskawaEncoderListener
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        public static string ExportFolderPath { get { return Properties.Settings.Default.ExportFolderPath; } }
+
+        private static NamedPipeServer<string> server;
+        private static int clients = 0;
+
+        #region Main
+
+        private static void Main(string[] args)
+        {
+            //Single-instance only
+            using (var mutex = new Mutex(false, string.Format("Global\\{{{0}}}",
+                ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), false)
+                .GetValue(0)).Value.ToString())))
+            {
+                var hasHandle = false;
+                try
+                {
+                    try
+                    {
+                        hasHandle = mutex.WaitOne(5000, false);
+                        if (!hasHandle) return;
+                    }
+                    catch (AbandonedMutexException)
+                    {
+                        hasHandle = true;
+                    }
+                    InstanceMain(args);
+                }
+                finally
+                {
+                    if (hasHandle)
+                        mutex.ReleaseMutex();
+                }
+            }
+        }
+        private static void InstanceMain(string[] args)
         {
             try
             {
-                instanceMutex = new Mutex(false, @"Global\YaskawaEncoderListener");
-                if (!instanceMutex.WaitOne(1000)) return;
-            }
-            catch (AbandonedMutexException)
-            {
-                //Previous instance did not exit gracefully
-            }
-
-            try
-            {
                 InitServer("MyUIAutomationPipe");
+                SendInitialExecutionCommand();
+                while (clients == 1) //Spin forever until the client shuts down
+                {
+                    Thread.Sleep(10);
+                }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
-
-            while (clients == 1) //Spin forever until the client shuts down
-            {
-                Thread.Sleep(10);
-            }
-
-            instanceMutex.ReleaseMutex();
         }
 
-        private static Mutex instanceMutex;
-        private static NamedPipeServer<string> server;
-        private static int clients = 0;
+        #endregion
+
+        #region Pipes Init
 
         private static void InitServer(string pipeName)
         {
@@ -64,6 +90,7 @@ namespace YaskawaEncoderListener
 
             server.Start();
             int prevClients = 0;
+            Console.WriteLine("Waiting for client...");
             while (clients == 0) Thread.Sleep(1000);
             prevClients = clients;
             Thread.Sleep(1000);
@@ -76,27 +103,86 @@ namespace YaskawaEncoderListener
             server.PushMessage(cmd);
         }
 
-        public static void PipeCommandReceived(string cmd)
+        #endregion
+
+        #region Payload
+
+        /// <summary>
+        /// First execution command has to be sent explicitly. All following commands are in fact responses to responses.
+        /// </summary>
+        private static void SendInitialExecutionCommand()
+        {
+            SendPipeCommand(PipeCommands.ExecuteScenario);
+        }
+
+        private static void PipeCommandReceived(string cmd)
         {
             try
             {
                 ScenarioExitCodes code = (ScenarioExitCodes)int.Parse(cmd);
-
+                switch (code)
+                {
+                    case ScenarioExitCodes.OK:
+                        if (CheckFile())
+                        {
+                            Console.WriteLine("False alarm. Continuing scenario execution...");
+                            //SendPipeCommand(PipeCommands.ExecuteScenario);
+                        }
+                        break;
+                    case ScenarioExitCodes.WindowNotFound:
+                        break;
+                    case ScenarioExitCodes.EmptyWindow:
+                        break;
+                    case ScenarioExitCodes.WrongArguments:
+                        break;
+                    case ScenarioExitCodes.Timeout:
+                        break;
+                    case ScenarioExitCodes.UnexpectedError:
+                        break;
+                    default:
+                        break;
+                }
             }
             catch (FormatException)
             {
-
+                Console.WriteLine("Client has sent a non-numeric response!");
             }
             catch (InvalidCastException)
             {
-                
+                Console.WriteLine("Client has sent an invalid exit code!");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Can't react to a client response:");
+                Console.WriteLine(e.ToString());
             }
         }
 
-        public static void Log(string txt)
+        private static bool CheckFile()
         {
-
+            try
+            {
+                var files = Directory.GetFiles(ExportFolderPath).OrderBy((x) => { return File.GetCreationTime(x); });
+                string lastFile = files.Last();
+                string lastLine = File.ReadAllLines(lastFile).Last(x => x.Length > 0);
+                if (lastLine.Split(',')[Properties.Settings.Default.ColumnIndex].Trim() == Properties.Settings.Default.AlarmText)
+                {
+                    return false;
+                }
+                else
+                {
+                    File.Delete(lastFile);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Can't check file contents:");
+                Console.WriteLine(e.ToString());
+            }
+            return true; //true == continue scenario execution
         }
+
+        #endregion
     }
 
     public static class PipeCommands

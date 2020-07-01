@@ -23,7 +23,8 @@ namespace UIAutomationTool
         EmptyWindow,
         WrongArguments,
         Timeout,
-        UnexpectedError
+        UnexpectedError,
+        Aborted
     }
 
     [DataContract]
@@ -47,17 +48,21 @@ namespace UIAutomationTool
             simulatorInstance.Keyboard.KeyDown(code);
         }
 
-        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, int lim = 0)
+        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t, int lim = 0)
         {
             Point d = p.GetPoint(PointReference.TopLeft, w);
             int cnt = 0;
             while (Native.GetPixelColor(d) != c)
             {
-                Sleep(100);
-                cnt += 100;
+                Sleep(10);
+                cnt += 10;
                 if (lim > 0)
                 {
                     if (lim <= cnt) return false;
+                }
+                if (t != null)
+                {
+                    if (t.IsCancellationRequested) return false;
                 }
             }
             return true;
@@ -80,33 +85,33 @@ namespace UIAutomationTool
         [DataMember(EmitDefaultValue = true)]
         public WindowsInput.Native.VirtualKeyCode LoopBreakKey { get; private set; } = WindowsInput.Native.VirtualKeyCode.RCONTROL;
         [DataMember(EmitDefaultValue = true)]
-        public bool FailOnTimeout = true;
+        public bool FailOnTimeout { get; private set; } = true;
 
-        public int Loop()
+        public int Loop(CancellationTokenSource cancel = null)
         {
-            return Loop(null);
-        }
-        public int Loop(CancellationTokenSource cancel)
-        {
-            while (!BreakOutPressed() && (cancel == null ? true : !cancel.IsCancellationRequested))
+            while (!BreakOutPressed())
             {
-                int r = Execute();
+                int r = Execute(cancel);
                 if (r != 0) return r;
             }
             return (int)ScenarioExitCodes.OK;
         }
-        public int Execute()
+        public int Execute(CancellationTokenSource cancel = null)
         {
+            //First, look for the window needed
             IntPtr hWnd = IntPtr.Zero;
             try
             {
-                hWnd = Native.FindWindowByCaption(Program.WindowSearchString);
+                hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
             }
             catch (Exception ex)
             {
                 ErrorListener.Add(ex);
             }
             if (hWnd == IntPtr.Zero) return (int)ScenarioExitCodes.WindowNotFound;
+            //Next, try to bring it to front and make active
+
+            //Next, see if it's a 0x0 rectangle (still minimized or smth)
             Rectangle window = new Rectangle();
             try
             {
@@ -117,11 +122,16 @@ namespace UIAutomationTool
                 ErrorListener.Add(ex);
             }
             if (window.IsEmpty) return (int)ScenarioExitCodes.EmptyWindow;
+            //Finally, execute the scenario
             try
             {
                 var dic = Program.Database.ToDictionary(x => x.Name);
                 for (int i = 0; i < Actions.Length; i++)
                 {
+                    if (cancel != null)
+                    {
+                        if (cancel.IsCancellationRequested) return (int)ScenarioExitCodes.Aborted;
+                    }
                     switch (Actions[i].Type)
                     {
                         case ActionTypes.MouseClick:
@@ -133,7 +143,7 @@ namespace UIAutomationTool
                         case ActionTypes.WaitForPixel:
                             {
                                 bool r = WaitForPixel(dic[(string)Actions[i].Arguments[0]], window, (Color)Actions[i].Arguments[1],
-                                    Actions[i].Arguments.Length > 2 ? (int)Actions[i].Arguments[2] : 0);
+                                    cancel, (Actions[i].Arguments.Length > 2) ? (int)Actions[i].Arguments[2] : 0);
                                 if (FailOnTimeout && !r) throw new TimeoutException();
                                 break;
                             }

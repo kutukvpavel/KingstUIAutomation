@@ -71,5 +71,7 @@ namespace UIAutomationTool
         {
             SetCursorPos(p.X, p.Y);
         }
+
+
     }
 }

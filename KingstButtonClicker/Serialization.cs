@@ -11,6 +11,7 @@ namespace UIAutomationTool
     {
         public static readonly string DatabasePath = Path.Combine(Environment.CurrentDirectory, Program.DatabaseFileName);
         public static readonly string ScenarioPath = Path.Combine(Environment.CurrentDirectory, Program.ScenarioFileName);
+        public static readonly string WindowTitlePath = Path.Combine(Environment.CurrentDirectory, Program.WindowTitleFileName);
 
         private static readonly Type[] databaseKnown = new Type[] { typeof(Point), typeof(PointReference), typeof(ClickPoint) };
         private static readonly Type[] scenarioKnown = new Type[] 

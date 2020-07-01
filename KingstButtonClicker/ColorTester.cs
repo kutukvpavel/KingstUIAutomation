@@ -21,7 +21,7 @@ namespace UIAutomationTool
             IntPtr hWnd = IntPtr.Zero;
             try
             {
-                hWnd = Native.FindWindowByCaption(Program.WindowSearchString);
+                hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
             }
             catch (Exception ex)
             {
@@ -44,7 +44,7 @@ namespace UIAutomationTool
                 try
                 {
                     Color c = Native.GetPixelColor(Points[i].GetPoint(PointReference.TopLeft, window));
-                    res.AppendFormat("{0} = {1}", Points[i].Name, c.ToString());
+                    res.AppendFormat("{0} = {1} ({2})", Points[i].Name, c.ToString(), (uint)c.ToArgb());
                 }
                 catch (Exception ex)
                 {
