@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using NamedPipeWrapper;
-using System.Runtime.InteropServices;
-using System.Reflection;
+﻿using NamedPipeWrapper;
+using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace YaskawaEncoderListener
 {
@@ -52,10 +51,11 @@ namespace YaskawaEncoderListener
             try
             {
                 InitServer("MyUIAutomationPipe");
+                Thread.Sleep(Properties.Settings.Default.StartupDelay);
                 SendInitialExecutionCommand();
                 while (clients == 1) //Spin forever until the client shuts down
                 {
-                    Thread.Sleep(10);
+                    Thread.Sleep(1000);
                 }
             }
             catch (Exception e)
@@ -100,6 +100,7 @@ namespace YaskawaEncoderListener
 
         public static void SendPipeCommand(string cmd)
         {
+            Console.WriteLine("Sending pipe command: " + cmd);
             server.PushMessage(cmd);
         }
 
@@ -112,6 +113,7 @@ namespace YaskawaEncoderListener
         /// </summary>
         private static void SendInitialExecutionCommand()
         {
+            Console.WriteLine("Startup delay...");
             SendPipeCommand(PipeCommands.ExecuteScenario);
         }
 
@@ -126,21 +128,25 @@ namespace YaskawaEncoderListener
                         if (CheckFile())
                         {
                             Console.WriteLine("False alarm. Continuing scenario execution...");
-                            //SendPipeCommand(PipeCommands.ExecuteScenario);
+                            Task execNext = new Task(() => 
+                            {
+                                Thread.Sleep(100);
+                                SendPipeCommand(PipeCommands.ExecuteScenario);
+                            });
+                            execNext.Start();
                         }
                         break;
-                    case ScenarioExitCodes.WindowNotFound:
-                        break;
-                    case ScenarioExitCodes.EmptyWindow:
-                        break;
-                    case ScenarioExitCodes.WrongArguments:
-                        break;
-                    case ScenarioExitCodes.Timeout:
-                        break;
-                    case ScenarioExitCodes.UnexpectedError:
+                    case ScenarioExitCodes.Aborted:
+                        Console.Write("Aborted. Press Y to continue... ");
+                        if (Console.ReadKey().Key == ConsoleKey.Y)
+                        {
+                            Console.WriteLine();
+                            goto case ScenarioExitCodes.OK;
+                        }
+                        Environment.Exit((int)ScenarioExitCodes.Aborted);
                         break;
                     default:
-                        break;
+                        goto case ScenarioExitCodes.OK;
                 }
             }
             catch (FormatException)
@@ -164,15 +170,30 @@ namespace YaskawaEncoderListener
             {
                 var files = Directory.GetFiles(ExportFolderPath).OrderBy((x) => { return File.GetCreationTime(x); });
                 string lastFile = files.Last();
-                string lastLine = File.ReadAllLines(lastFile).Last(x => x.Length > 0);
-                if (lastLine.Split(',')[Properties.Settings.Default.ColumnIndex].Trim() == Properties.Settings.Default.AlarmText)
+                int again = 5;
+                while (again > 0)
                 {
-                    return false;
+                    try
+                    {
+                        string lastLine = File.ReadAllLines(lastFile).Last(x => x.Length > 0);
+                        if (lastLine.Split(',')[Properties.Settings.Default.ColumnIndex].Trim() == Properties.Settings.Default.AlarmText)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Deleting false alarm file:" + lastFile);
+                            File.Delete(lastFile);
+                        }
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        Thread.Sleep(100);
+                    }
+                    again--;
                 }
-                else
-                {
-                    File.Delete(lastFile);
-                }
+                if (again == 0) Console.WriteLine("Timeout for filecheck()!");
             }
             catch (Exception e)
             {
@@ -199,6 +220,7 @@ namespace YaskawaEncoderListener
         EmptyWindow,
         WrongArguments,
         Timeout,
-        UnexpectedError
+        UnexpectedError,
+        Aborted
     }
 }

@@ -122,7 +122,6 @@ namespace UIAutomationTool
             WindowTitleString = Serialization.ReadWindowTitle(WindowTitleString);
             //Init pipeline
             pipeClient = new NamedPipeClient<string>(PipeName);
-            pipeClient.ServerMessage += PipeClient_ServerMessage;
             //Start WinForms
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -140,20 +139,26 @@ namespace UIAutomationTool
         private static NamedPipeClient<string> pipeClient;
         private static CancellationTokenSource pipeCancellation;
 
+        public static event EventHandler<PipeEventArgs> PipeCommandReceived;
+
         public static void SetPipeOperation(bool operate)
         {
             if (operate)
             {
+                pipeClient.ServerMessage += PipeClient_ServerMessage;
                 pipeClient.Start();
             }
             else
             {
+                if (pipeCancellation != null) pipeCancellation.Cancel();
+                pipeClient.ServerMessage -= PipeClient_ServerMessage;
                 pipeClient.Stop();
             }
         }
         private static void PipeClient_ServerMessage(NamedPipeConnection<string, string> connection, string message)
         {
             if (pipeCancellation != null) return;
+            PipeCommandReceived?.Invoke(null, new PipeEventArgs(message));
             int res = -1;
             switch (message)
             {
@@ -174,6 +179,17 @@ namespace UIAutomationTool
             pipeCancellation = null;
             pipeClient.PushMessage(res.ToString());
         }
+
+        public class PipeEventArgs : EventArgs
+        {
+            public PipeEventArgs(string s)
+            {
+                PipeCommand = s;
+            }
+
+            public string PipeCommand { get; }
+        }
+
 
         #endregion
     }

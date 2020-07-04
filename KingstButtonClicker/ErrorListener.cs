@@ -30,8 +30,6 @@ namespace UIAutomationTool
                         string.Format(LogLineFormat, DateTime.Now.ToString(LogDatetimeFormat), e.ToString()));
                 }
                 catch (Exception)
-                { }
-                finally
                 {
                     if (EnableMessages) MessageBox.Show("Failed to save error log!",
                         Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);

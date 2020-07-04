@@ -30,7 +30,26 @@ namespace UIAutomationTool
             enableLogToolStripMenuItem.Checked = Settings.Default.EnableLog;
             enableMessagesToolStripMenuItem.Checked = Settings.Default.EnableMessages;
             enablePipeOnStartupToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
-            enablePipeClientToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
+        }
+
+        private void SimulatorScenario_ScenarioExecuted(object sender, ScenarioEventArgs e)
+        {
+            Invoke((Action)(() =>
+            {
+                //txtOutput.AppendText(Environment.NewLine);
+                txtOutput.AppendText("Scenario exit code: " + e.ExitCode.ToString());
+                txtOutput.AppendText(Environment.NewLine);
+            }));
+        }
+
+        private void Program_PipeCommandReceived(object sender, Program.PipeEventArgs e)
+        {
+            Invoke((Action)(() =>
+            {
+                txtOutput.AppendText(Environment.NewLine);
+                txtOutput.AppendText("Pipe command received: " + e.PipeCommand);
+                txtOutput.AppendText(Environment.NewLine);
+            }));
         }
 
         #region Form Events
@@ -42,11 +61,18 @@ namespace UIAutomationTool
                 e.Cancel = true;
                 Hide();
             }
+            else
+            {
+                Program.PipeCommandReceived -= Program_PipeCommandReceived;
+                SimulatorScenario.ScenarioExecuted -= SimulatorScenario_ScenarioExecuted;
+            }
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
             LoadSettings();
+            Program.PipeCommandReceived += Program_PipeCommandReceived;
+            SimulatorScenario.ScenarioExecuted += SimulatorScenario_ScenarioExecuted;
         }
 
         #endregion
@@ -135,6 +161,7 @@ namespace UIAutomationTool
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Settings.Default.Save();
             Application.Exit();
         }
 
@@ -233,21 +260,38 @@ namespace UIAutomationTool
         private CancellationTokenSource loopCancellation = null;
         private void loopThroughScenarioToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
-            TaskWithCancellation(loopThroughScenarioToolStripMenuItem.Checked, "Scenario loop exit code: ",
+            TaskWithCancellation(loopThroughScenarioToolStripMenuItem.Checked,
                 (t) => { return Program.Scenario.Loop(t); }, loopCancellation);
         }
 
         private CancellationTokenSource execCancellation = null;
         private void executeScenarioToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
-            TaskWithCancellation(executeScenarioToolStripMenuItem.Checked, "Scenario exit code: ",
+            TaskWithCancellation(executeScenarioToolStripMenuItem.Checked,
                 (t) => { return Program.Scenario.Execute(t); }, execCancellation);
             executeScenarioToolStripMenuItem.Checked = false;
         }
 
         #endregion
 
-        private void TaskWithCancellation(bool startStop, string txt, Func<CancellationTokenSource, int> act,
+        #region Other UI Events
+
+        private void txtOutput_TextChanged(object sender, EventArgs e)
+        {
+            if (txtOutput.Lines.Length > 100)
+            {
+                txtOutput.Lines = txtOutput.Lines.Skip(10).ToArray();
+            }
+        }
+
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            Show();
+        }
+
+        #endregion
+
+        private void TaskWithCancellation(bool startStop, Func<CancellationTokenSource, int> act,
             CancellationTokenSource token)
         {
             if (!startStop)
@@ -256,7 +300,6 @@ namespace UIAutomationTool
                 return;
             }
             Hide();
-            txtOutput.AppendText(Environment.NewLine + txt);
             try
             {
                 token = new CancellationTokenSource();
@@ -267,7 +310,6 @@ namespace UIAutomationTool
                     Thread.Sleep(100);
                     Application.DoEvents();
                 }
-                txtOutput.AppendText(exec.Result.ToString());
             }
             catch (Exception ex)
             {
@@ -278,14 +320,15 @@ namespace UIAutomationTool
             Show();
         }
 
-        #region Other UI Events
-
-        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        private void MainForm_Shown(object sender, EventArgs e)
         {
-            Show();
+            enablePipeClientToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
         }
 
-        #endregion
-
+        private void minimizeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Settings.Default.Save();
+            Hide();
+        }
     }
 }

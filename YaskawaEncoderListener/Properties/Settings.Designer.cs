@@ -58,5 +58,17 @@ namespace YaskawaEncoderListener.Properties {
                 this["AlarmText"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("60000")]
+        public int StartupDelay {
+            get {
+                return ((int)(this["StartupDelay"]));
+            }
+            set {
+                this["StartupDelay"] = value;
+            }
+        }
     }
 }

@@ -48,24 +48,35 @@ namespace UIAutomationTool
             simulatorInstance.Keyboard.KeyDown(code);
         }
 
-        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t, int lim = 0)
+        public static bool CheckKeyPressed(WindowsInput.Native.VirtualKeyCode code)
+        {
+            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(code);
+        }
+
+        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t,
+            WindowsInput.Native.VirtualKeyCode k, int lim = 0)
         {
             Point d = p.GetPoint(PointReference.TopLeft, w);
             int cnt = 0;
-            while (Native.GetPixelColor(d) != c)
+            while (Native.GetPixelColor(d) != c) //This API has a high performance impact
             {
-                Sleep(10);
-                cnt += 10;
+                Sleep(200);
+                cnt += 200;
                 if (lim > 0)
                 {
                     if (lim <= cnt) return false;
                 }
                 if (t != null)
                 {
-                    if (t.IsCancellationRequested) return false;
+                    if (t.IsCancellationRequested) break;
                 }
+                if (CheckKeyPressed(k)) break;
             }
             return true;
+        }
+        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t, int lim = 0)
+        {
+            return WaitForPixel(p, w, c, t, WindowsInput.Native.VirtualKeyCode.RCONTROL, lim);
         }
 
         public static void Sleep(int ms)
@@ -87,9 +98,11 @@ namespace UIAutomationTool
         [DataMember(EmitDefaultValue = true)]
         public bool FailOnTimeout { get; private set; } = true;
 
+        public static event EventHandler<ScenarioEventArgs> ScenarioExecuted;
+
         public int Loop(CancellationTokenSource cancel = null)
         {
-            while (!BreakOutPressed())
+            while (!CheckKeyPressed(LoopBreakKey))
             {
                 int r = Execute(cancel);
                 if (r != 0) return r;
@@ -97,6 +110,12 @@ namespace UIAutomationTool
             return (int)ScenarioExitCodes.OK;
         }
         public int Execute(CancellationTokenSource cancel = null)
+        {
+            int res = ExecutionEngine(cancel);
+            ScenarioExecuted?.Invoke(this, new ScenarioEventArgs(res));
+            return res;
+        }
+        private int ExecutionEngine(CancellationTokenSource cancel = null)
         {
             //First, look for the window needed
             IntPtr hWnd = IntPtr.Zero;
@@ -109,7 +128,7 @@ namespace UIAutomationTool
                 ErrorListener.Add(ex);
             }
             if (hWnd == IntPtr.Zero) return (int)ScenarioExitCodes.WindowNotFound;
-            //Next, try to bring it to front and make active
+            //TODO: Next, try to bring it to front and make active
 
             //Next, see if it's a 0x0 rectangle (still minimized or smth)
             Rectangle window = new Rectangle();
@@ -132,6 +151,7 @@ namespace UIAutomationTool
                     {
                         if (cancel.IsCancellationRequested) return (int)ScenarioExitCodes.Aborted;
                     }
+                    if (CheckKeyPressed(LoopBreakKey)) return (int)ScenarioExitCodes.Aborted;
                     switch (Actions[i].Type)
                     {
                         case ActionTypes.MouseClick:
@@ -172,11 +192,6 @@ namespace UIAutomationTool
             }
             return (int)ScenarioExitCodes.OK;
         }
-
-        private bool BreakOutPressed()
-        {
-            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(LoopBreakKey);
-        }
     }
 
     [DataContract]
@@ -209,5 +224,15 @@ namespace UIAutomationTool
         /// </summary>
         [DataMember]  
         public object[] Arguments { get; private set; }
+    }
+
+    public class ScenarioEventArgs : EventArgs
+    {
+        public ScenarioEventArgs(int code)
+        {
+            ExitCode = code;
+        }
+
+        public int ExitCode { get; }
     }
 }

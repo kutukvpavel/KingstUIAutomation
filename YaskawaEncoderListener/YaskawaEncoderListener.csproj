@@ -64,6 +64,14 @@
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>robocopy $(TargetDir) "C:\Users\Admin\Source\Repos\KingstUIAutomation\release" /s /xf *.xml *.txt *.vshost.exe*
+robocopy $(TargetDir) "F:\diamant\encoder\release" /s /xf *.xml *.txt *.vshost.exe*</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
