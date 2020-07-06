@@ -15,7 +15,7 @@ Since Kingst doesn't offer any API to control acquisition (and KingstVIS is a Qt
 - Window search. I.e. the script won't be executed (will return corresponding non-zero exit code immediately) if a window with specified title can't be found. Window title is specified using title.txt file inside the working directory.
 - Some basic GUI.
 
-**Todo:**  Test points that are referenced not from TopLeft corner (the corresponding functionality should already be in-place), add the ability to switch window oreder (Win32 API, since Vista it's a rather long way to go). Some GUI improvements. Probably add mouse wheel simulation.
+**Todo:**  Support non-maximized windows (a part of corresponding functionality is already in-place), add the ability to switch window oreder (Win32 API, since Vista it's a rather long way to go). Some GUI improvements. Probably add mouse wheel simulation and right/middle mouse buttons.
 
 **P.S.**
 
