@@ -9,8 +9,17 @@ namespace UIAutomationTool
 {
     public static class Serialization
     {
+        /// <summary>
+        /// Returns absolute path based on current working folder
+        /// </summary>
         public static readonly string DatabasePath = Path.Combine(Environment.CurrentDirectory, Program.DatabaseFileName);
+        /// <summary>
+        /// Returns absolute path based on current working folder
+        /// </summary>
         public static readonly string ScenarioPath = Path.Combine(Environment.CurrentDirectory, Program.ScenarioFileName);
+        /// <summary>
+        /// Returns absolute path based on current working folder
+        /// </summary>
         public static readonly string WindowTitlePath = Path.Combine(Environment.CurrentDirectory, Program.WindowTitleFileName);
 
         private static readonly Type[] databaseKnown = new Type[] { typeof(Point), typeof(PointReference), typeof(ClickPoint) };
@@ -128,10 +137,5 @@ namespace UIAutomationTool
                 throw new IOException(); //This is fatal, terminate
             }
         }
-    }
-
-    public class SerializationException : Exception
-    {
-
     }
 }

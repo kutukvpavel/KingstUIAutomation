@@ -16,6 +16,10 @@ namespace UIAutomationTool
 
         public ClickPoint[] Points { get; }
 
+        /// <summary>
+        /// Get human-readable report on colors of the points
+        /// </summary>
+        /// <returns>Formatted string, with an extra line appended at the end</returns>
         public string GetReport()
         {
             IntPtr hWnd = IntPtr.Zero;

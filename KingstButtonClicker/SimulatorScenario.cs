@@ -16,6 +16,9 @@ namespace UIAutomationTool
         Sleep
     }
 
+    /// <summary>
+    /// Exit codes for scenario execution
+    /// </summary>
     public enum ScenarioExitCodes
     {
         OK = 0,
@@ -34,6 +37,11 @@ namespace UIAutomationTool
 
         #region Static Methods
 
+        /// <summary>
+        /// Move to specified point and click left mouse button
+        /// </summary>
+        /// <param name="p">Database point</param>
+        /// <param name="w">Target window rectangle</param>
         public static void MouseClick(ClickPoint p, Rectangle w)
         {
             //Point d = p.GetDesktopPoint(w);
@@ -53,6 +61,16 @@ namespace UIAutomationTool
             return simulatorInstance.InputDeviceState.IsHardwareKeyDown(code);
         }
 
+        /// <summary>
+        /// Wait until the pixel changes its color to the specified one
+        /// </summary>
+        /// <param name="p">Database point</param>
+        /// <param name="w">Target window rectangle</param>
+        /// <param name="c">Target color</param>
+        /// <param name="t">Cancellation token</param>
+        /// <param name="k">Virtual key code for user abort</param>
+        /// <param name="lim">Optional time limit (mS), 0 = no limit</param>
+        /// <returns>False on timeout, true otherwise</returns>
         public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t,
             WindowsInput.Native.VirtualKeyCode k, int lim = 0)
         {
@@ -74,6 +92,17 @@ namespace UIAutomationTool
             }
             return true;
         }
+        /// <summary>
+        /// Wait until the pixel changes its color to the specified one.
+        /// Use default user abort key (right Control)
+        /// </summary>
+        /// <param name="p">Database point</param>
+        /// <param name="w">Target window rectangle</param>
+        /// <param name="c">Target color</param>
+        /// <param name="t">Cancellation token</param>
+        /// <param name="lim">Optional time limit (mS), 0 = no limit</param>
+        /// <returns>False on timeout, true otherwise</param>
+        /// <returns></returns>
         public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t, int lim = 0)
         {
             return WaitForPixel(p, w, c, t, WindowsInput.Native.VirtualKeyCode.RCONTROL, lim);
@@ -93,8 +122,14 @@ namespace UIAutomationTool
 
         [DataMember]
         public SimulatorAction[] Actions { get; private set; }
+        /// <summary>
+        /// Defaults to right Control
+        /// </summary>
         [DataMember(EmitDefaultValue = true)]
         public WindowsInput.Native.VirtualKeyCode LoopBreakKey { get; private set; } = WindowsInput.Native.VirtualKeyCode.RCONTROL;
+        /// <summary>
+        /// Defaults to True
+        /// </summary>
         [DataMember(EmitDefaultValue = true)]
         public bool FailOnTimeout { get; private set; } = true;
 
@@ -220,12 +255,15 @@ namespace UIAutomationTool
         /// For mouse click - the name of the point (in the database)
         /// For key press - WindowsInput.Native.VirtualKeyCode
         /// For sleep - int (ms)
-        /// For pixel color based waiting - point name and color (+ optional time limit)
+        /// For pixel color based waiting - point name, color, (optional time limit)
         /// </summary>
         [DataMember]  
         public object[] Arguments { get; private set; }
     }
 
+    /// <summary>
+    /// Contains scenario exit code (int)
+    /// </summary>
     public class ScenarioEventArgs : EventArgs
     {
         public ScenarioEventArgs(int code)

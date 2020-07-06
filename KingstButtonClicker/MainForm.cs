@@ -17,6 +17,9 @@ namespace UIAutomationTool
         {
             InitializeComponent();
         }
+        /// <summary>
+        /// Show database contents inside the console textbox
+        /// </summary>
         private void PrintDatabase()
         {
             txtOutput.AppendText(Environment.NewLine);
@@ -31,6 +34,8 @@ namespace UIAutomationTool
             enableMessagesToolStripMenuItem.Checked = Settings.Default.EnableMessages;
             enablePipeOnStartupToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
         }
+
+        #region Non-UI events
 
         private void SimulatorScenario_ScenarioExecuted(object sender, ScenarioEventArgs e)
         {
@@ -52,6 +57,8 @@ namespace UIAutomationTool
             }));
         }
 
+        #endregion
+
         #region Form Events
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -65,6 +72,7 @@ namespace UIAutomationTool
             {
                 Program.PipeCommandReceived -= Program_PipeCommandReceived;
                 SimulatorScenario.ScenarioExecuted -= SimulatorScenario_ScenarioExecuted;
+                Settings.Default.Save();
             }
         }
 
@@ -75,9 +83,20 @@ namespace UIAutomationTool
             SimulatorScenario.ScenarioExecuted += SimulatorScenario_ScenarioExecuted;
         }
 
+        private void MainForm_Shown(object sender, EventArgs e)
+        {
+            enablePipeClientToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
+        }
+
         #endregion
 
         #region Menu Events
+
+        private void minimizeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Settings.Default.Save();
+            Hide();
+        }
 
         private void testColorsToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -291,6 +310,12 @@ namespace UIAutomationTool
 
         #endregion
 
+        /// <summary>
+        /// Start/stop a task, wait for its completion (but don't block events)
+        /// </summary>
+        /// <param name="startStop"></param>
+        /// <param name="act"></param>
+        /// <param name="token"></param>
         private void TaskWithCancellation(bool startStop, Func<CancellationTokenSource, int> act,
             CancellationTokenSource token)
         {
@@ -318,17 +343,6 @@ namespace UIAutomationTool
             }
             txtOutput.AppendText(Environment.NewLine);
             Show();
-        }
-
-        private void MainForm_Shown(object sender, EventArgs e)
-        {
-            enablePipeClientToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
-        }
-
-        private void minimizeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Settings.Default.Save();
-            Hide();
         }
     }
 }

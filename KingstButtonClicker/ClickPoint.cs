@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.Serialization;
 using System.Drawing;
+using System.Runtime.Serialization;
 
 namespace UIAutomationTool
 {
+    /// <summary>
+    /// Corners
+    /// </summary>
     public enum PointReference
     {
         TopLeft,
@@ -16,6 +16,9 @@ namespace UIAutomationTool
         BottomRight
     }
 
+    /// <summary>
+    /// Combines name, ReferencedPoint coordinates and some methods for convenience
+    /// </summary>
     [DataContract]
     public class ClickPoint
     {
@@ -37,9 +40,10 @@ namespace UIAutomationTool
 
         /// <summary>
         /// We use a borderless form when we record the points, therefore we get screen coordinates right away
+        /// TODO: consider getting client rectangle for the window and calculate client coordinates
         /// </summary>
-        /// <param name="r"></param>
-        /// <param name="window"></param>
+        /// <param name="r">Reference corner</param>
+        /// <param name="window">Target window rectangle</param>
         /// <returns></returns>
         public Point GetPoint(PointReference r, Rectangle window)
         {
@@ -82,6 +86,9 @@ namespace UIAutomationTool
         }
     }
 
+    /// <summary>
+    /// Simply a list of ClickPoints
+    /// </summary>
     [CollectionDataContract]
     public class PointDatabase : List<ClickPoint>
     {

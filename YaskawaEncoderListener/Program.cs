@@ -51,6 +51,7 @@ namespace YaskawaEncoderListener
             try
             {
                 InitServer("MyUIAutomationPipe");
+                Console.WriteLine("Startup delay...");
                 Thread.Sleep(Properties.Settings.Default.StartupDelay);
                 SendInitialExecutionCommand();
                 while (clients == 1) //Spin forever until the client shuts down
@@ -113,7 +114,7 @@ namespace YaskawaEncoderListener
         /// </summary>
         private static void SendInitialExecutionCommand()
         {
-            Console.WriteLine("Startup delay...");
+            Console.WriteLine("Sending initial execution command...");
             SendPipeCommand(PipeCommands.ExecuteScenario);
         }
 
@@ -164,6 +165,11 @@ namespace YaskawaEncoderListener
             }
         }
 
+        /// <summary>
+        /// Check whether the Alarm signal remains high till the end of the acquisition
+        /// (otherwise we've triggered on some kind of noise and we have to delete the exported file)
+        /// </summary>
+        /// <returns>True == continue execution (false alarm)</returns>
         private static bool CheckFile()
         {
             try
@@ -182,7 +188,7 @@ namespace YaskawaEncoderListener
                         }
                         else
                         {
-                            Console.WriteLine("Deleting false alarm file:" + lastFile);
+                            Console.WriteLine("Deleting false alarm file: " + lastFile);
                             File.Delete(lastFile);
                         }
                         break;

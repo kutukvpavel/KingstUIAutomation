@@ -10,6 +10,9 @@ using System.Windows.Forms;
 
 namespace UIAutomationTool
 {
+    /// <summary>
+    /// Exit codes for the application itself
+    /// </summary>
     public enum ExitCodes
     {
         UnhandledException = -2,
@@ -22,27 +25,60 @@ namespace UIAutomationTool
 
     public static class Program
     {
+        /// <summary>
+        /// This file is expected to exist (unless it's the first run) inside the working directory
+        /// </summary>
         public const string WindowTitleFileName = "title.txt";
+        /// <summary>
+        /// This file is expected to exist (unless it's the first run) inside the working directory
+        /// </summary>
         public const string DatabaseFileName = "database.xml";
+        /// <summary>
+        /// This file is expected to exist (unless it's the first run) inside the working directory
+        /// </summary>
         public const string ScenarioFileName = "scenario.xml";
+        /// <summary>
+        /// This file is created on demand (or overwritten!) by the application
+        /// </summary>
         public const string ExampleDatabaseName = "example_database.xml";
+        /// <summary>
+        /// This file is created on demand (or overwritten!) by the application
+        /// </summary>
         public const string ExampleScenarioName = "example_scenario.xml";
+        /// <summary>
+        /// Pipe server application has to know this string
+        /// </summary>
         public const string PipeName = "MyUIAutomationPipe";
 
+        /// <summary>
+        /// The title of the window to look for before scenario execution (normally is read from the file, defaults to Example)
+        /// </summary>
         public static string WindowTitleString = "Example";
+        /// <summary>
+        /// Current database. Has to be saved to disk (serialized) explicitly!
+        /// </summary>
         public static PointDatabase Database = new PointDatabase()
         {
             new ClickPoint(0, 0, PointReference.TopLeft, "Origin")
         };
+        /// <summary>
+        /// Current scenario. Is normally (unless first run) read from the file. Can't be edited inside the application (yet).
+        /// </summary>
         public static SimulatorScenario Scenario = new SimulatorScenario(
             new SimulatorAction(ActionTypes.MouseClick, "Origin"),
             new SimulatorAction(ActionTypes.Sleep, 500)
             );
 
+        /// <summary>
+        /// Constant example
+        /// </summary>
         public static readonly PointDatabase ExampleDatabase = new PointDatabase()
         {
             new ClickPoint(0, 0, PointReference.TopLeft, "Origin")
         };
+        /// <summary>
+        /// Constant example
+        /// </summary>
         public static readonly SimulatorScenario ExampleScenario = new SimulatorScenario(
             new SimulatorAction(ActionTypes.MouseClick, "PointName"),
             new SimulatorAction(ActionTypes.PressKey, WindowsInput.Native.VirtualKeyCode.RETURN),
@@ -83,7 +119,7 @@ namespace UIAutomationTool
                         InstanceMain(previousExitedNormally);
                         return (int)ExitCodes.OK;
                     }
-                    catch (SerializationException)
+                    catch (System.Runtime.Serialization.SerializationException)
                     {
                         return (int)ExitCodes.SerializationError;
                     }
@@ -141,6 +177,10 @@ namespace UIAutomationTool
 
         public static event EventHandler<PipeEventArgs> PipeCommandReceived;
 
+        /// <summary>
+        /// Starts or stops the pipe listener, manages its events.
+        /// </summary>
+        /// <param name="operate">True = enable operation</param>
         public static void SetPipeOperation(bool operate)
         {
             if (operate)
@@ -180,6 +220,9 @@ namespace UIAutomationTool
             pipeClient.PushMessage(res.ToString());
         }
 
+        /// <summary>
+        /// Contains received command (string identifier)
+        /// </summary>
         public class PipeEventArgs : EventArgs
         {
             public PipeEventArgs(string s)
