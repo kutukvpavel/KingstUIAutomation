@@ -21,6 +21,7 @@ namespace UIAutomationTool
         /// Returns absolute path based on current working folder
         /// </summary>
         public static readonly string WindowTitlePath = Path.Combine(Environment.CurrentDirectory, Program.WindowTitleFileName);
+        public static readonly string HandlePrefix = "hWnd:";
 
         private static readonly Type[] databaseKnown = new Type[] { typeof(Point), typeof(PointReference), typeof(ClickPoint) };
         private static readonly Type[] scenarioKnown = new Type[] 

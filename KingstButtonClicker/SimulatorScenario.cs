@@ -156,7 +156,15 @@ namespace UIAutomationTool
             IntPtr hWnd = IntPtr.Zero;
             try
             {
-                hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
+                if (Program.WindowTitleString.StartsWith(Serialization.HandlePrefix))
+                {
+                    hWnd = (IntPtr)int.Parse(Program.WindowTitleString.Remove(0, Serialization.HandlePrefix.Length),
+                        System.Globalization.NumberStyles.HexNumber);
+                }
+                else
+                {
+                    hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
+                }
             }
             catch (Exception ex)
             {
