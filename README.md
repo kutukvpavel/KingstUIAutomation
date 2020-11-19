@@ -17,6 +17,21 @@ Since Kingst doesn't offer any API to control acquisition (and KingstVIS is a Qt
 
 **Todo:**  Support non-maximized windows (a part of corresponding functionality is already in-place), add the ability to switch window oreder (Win32 API, since Vista it's a rather long way to go). Some GUI improvements. Probably add mouse wheel simulation and right/middle mouse buttons.
 
+Known bug: for some reason Edge (and possibly Chrome, altogether) windows can't be found by their title. Handles work, though they change after reopening/reboot.
+
+**How to use**
+Build, create file title.txt in the working directory that contains target window caption (string) or handle (format: "hWnd:<HEX string, as in Spy++>", no angle brackets or quotes).
+
+Run. The app will create database.xml and scenario.xml using an example template (if those files don't exist already). Default database contains one point "Origin" (0, 0), default scenario clicks on the origin and sleeps. To test whether the API is working correctly, you can use Tools -> Move mouse to.
+
+Fill the point database: Tools -> Record points. Prepare the window (or a full-screened screenshot, or anything) you want to work with in advance (so that it's behind the UI Automation Console window). An overlay will appear. Click left mouse button to add a point, then enter the name (unique) of the point. Repeat if neccessary. To close the overlay press Alt+F4. Database contents will be printed into the Console. You can edit the database using the system default text editor: Tools -> Edit database. After saving the edits, click Tools -> Update database from file.
+
+Create your scenario, based on the example. Click Tools -> Edit scenario and Help -> Show example scenario. What's going on should be clear for anyone familiar with XML serialization. If not, you can always check the source code as well as MSDN. Basically, now you can build your own scenario buy copy/pasting elements from the example. Main features have already been described above. To get ARGB integers that are used to serialize System.Drawing.Color you can use Tools -> Test colors (it will hide the Console, record color values for all pixels in the database and then print the listing into the Console). After saving the changes, click Tools -> Update scenario from file.
+
+Then, click Execute -> Execute scenario to test it. To break out of the scenario, use the key specified in the XML file (default = right control), note that the breakout key will not be caught until current scenario element finishes execution, so better hold the key while navigating to the Console window to uncheck "Execute scenario" or "Loop through scenario" to request cancellation of the execution.
+
+By default, the app gets minimized to tray when the main window is closed. To really close it, click Close -> Exit or disable minimization to tray in Settings.
+
 **P.S.**
 
 Uses .NET 4.0 (XP-compatible).
