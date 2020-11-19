@@ -281,6 +281,7 @@ namespace UIAutomationTool
         {
             TaskWithCancellation(loopThroughScenarioToolStripMenuItem.Checked,
                 (t) => { return Program.Scenario.Loop(t); }, loopCancellation);
+            loopThroughScenarioToolStripMenuItem.Checked = false;
         }
 
         private CancellationTokenSource execCancellation = null;
