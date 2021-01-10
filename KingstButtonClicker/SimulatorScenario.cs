@@ -16,6 +16,9 @@ namespace UIAutomationTool
         Sleep
     }
 
+    /// <summary>
+    /// Exit codes for scenario execution
+    /// </summary>
     public enum ScenarioExitCodes
     {
         OK = 0,
@@ -23,7 +26,8 @@ namespace UIAutomationTool
         EmptyWindow,
         WrongArguments,
         Timeout,
-        UnexpectedError
+        UnexpectedError,
+        Aborted
     }
 
     [DataContract]
@@ -33,6 +37,11 @@ namespace UIAutomationTool
 
         #region Static Methods
 
+        /// <summary>
+        /// Move to specified point and click left mouse button
+        /// </summary>
+        /// <param name="p">Database point</param>
+        /// <param name="w">Target window rectangle</param>
         public static void MouseClick(ClickPoint p, Rectangle w)
         {
             //Point d = p.GetDesktopPoint(w);
@@ -47,20 +56,56 @@ namespace UIAutomationTool
             simulatorInstance.Keyboard.KeyDown(code);
         }
 
-        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, int lim = 0)
+        public static bool CheckKeyPressed(WindowsInput.Native.VirtualKeyCode code)
+        {
+            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(code);
+        }
+
+        /// <summary>
+        /// Wait until the pixel changes its color to the specified one
+        /// </summary>
+        /// <param name="p">Database point</param>
+        /// <param name="w">Target window rectangle</param>
+        /// <param name="c">Target color</param>
+        /// <param name="t">Cancellation token</param>
+        /// <param name="k">Virtual key code for user abort</param>
+        /// <param name="lim">Optional time limit (mS), 0 = no limit</param>
+        /// <returns>False on timeout, true otherwise</returns>
+        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t,
+            WindowsInput.Native.VirtualKeyCode k, int lim = 0)
         {
             Point d = p.GetPoint(PointReference.TopLeft, w);
             int cnt = 0;
-            while (Native.GetPixelColor(d) != c)
+            while (Native.GetPixelColor(d) != c) //This API has a high performance impact
             {
-                Sleep(100);
-                cnt += 100;
+                Sleep(200);
+                cnt += 200;
                 if (lim > 0)
                 {
                     if (lim <= cnt) return false;
                 }
+                if (t != null)
+                {
+                    if (t.IsCancellationRequested) break;
+                }
+                if (CheckKeyPressed(k)) break;
             }
             return true;
+        }
+        /// <summary>
+        /// Wait until the pixel changes its color to the specified one.
+        /// Use default user abort key (right Control)
+        /// </summary>
+        /// <param name="p">Database point</param>
+        /// <param name="w">Target window rectangle</param>
+        /// <param name="c">Target color</param>
+        /// <param name="t">Cancellation token</param>
+        /// <param name="lim">Optional time limit (mS), 0 = no limit</param>
+        /// <returns>False on timeout, true otherwise</param>
+        /// <returns></returns>
+        public static bool WaitForPixel(ClickPoint p, Rectangle w, Color c, CancellationTokenSource t, int lim = 0)
+        {
+            return WaitForPixel(p, w, c, t, WindowsInput.Native.VirtualKeyCode.RCONTROL, lim);
         }
 
         public static void Sleep(int ms)
@@ -77,36 +122,58 @@ namespace UIAutomationTool
 
         [DataMember]
         public SimulatorAction[] Actions { get; private set; }
+        /// <summary>
+        /// Defaults to right Control
+        /// </summary>
         [DataMember(EmitDefaultValue = true)]
         public WindowsInput.Native.VirtualKeyCode LoopBreakKey { get; private set; } = WindowsInput.Native.VirtualKeyCode.RCONTROL;
+        /// <summary>
+        /// Defaults to True
+        /// </summary>
         [DataMember(EmitDefaultValue = true)]
-        public bool FailOnTimeout = true;
+        public bool FailOnTimeout { get; private set; } = true;
 
-        public int Loop()
+        public static event EventHandler<ScenarioEventArgs> ScenarioExecuted;
+
+        public int Loop(CancellationTokenSource cancel = null)
         {
-            return Loop(null);
-        }
-        public int Loop(CancellationTokenSource cancel)
-        {
-            while (!BreakOutPressed() && (cancel == null ? true : !cancel.IsCancellationRequested))
+            while (!CheckKeyPressed(LoopBreakKey))
             {
-                int r = Execute();
+                int r = Execute(cancel);
                 if (r != 0) return r;
             }
             return (int)ScenarioExitCodes.OK;
         }
-        public int Execute()
+        public int Execute(CancellationTokenSource cancel = null)
         {
+            int res = ExecutionEngine(cancel);
+            ScenarioExecuted?.Invoke(this, new ScenarioEventArgs(res));
+            return res;
+        }
+        private int ExecutionEngine(CancellationTokenSource cancel = null)
+        {
+            //First, look for the window needed
             IntPtr hWnd = IntPtr.Zero;
             try
             {
-                hWnd = Native.FindWindowByCaption(Program.WindowSearchString);
+                if (Program.WindowTitleString.StartsWith(Serialization.HandlePrefix))
+                {
+                    hWnd = (IntPtr)int.Parse(Program.WindowTitleString.Remove(0, Serialization.HandlePrefix.Length),
+                        System.Globalization.NumberStyles.HexNumber);
+                }
+                else
+                {
+                    hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
+                }
             }
             catch (Exception ex)
             {
                 ErrorListener.Add(ex);
             }
             if (hWnd == IntPtr.Zero) return (int)ScenarioExitCodes.WindowNotFound;
+            //TODO: Next, try to bring it to front and make active
+
+            //Next, see if it's a 0x0 rectangle (still minimized or smth)
             Rectangle window = new Rectangle();
             try
             {
@@ -117,11 +184,17 @@ namespace UIAutomationTool
                 ErrorListener.Add(ex);
             }
             if (window.IsEmpty) return (int)ScenarioExitCodes.EmptyWindow;
+            //Finally, execute the scenario
             try
             {
                 var dic = Program.Database.ToDictionary(x => x.Name);
                 for (int i = 0; i < Actions.Length; i++)
                 {
+                    if (cancel != null)
+                    {
+                        if (cancel.IsCancellationRequested) return (int)ScenarioExitCodes.Aborted;
+                    }
+                    if (CheckKeyPressed(LoopBreakKey)) return (int)ScenarioExitCodes.Aborted;
                     switch (Actions[i].Type)
                     {
                         case ActionTypes.MouseClick:
@@ -133,7 +206,7 @@ namespace UIAutomationTool
                         case ActionTypes.WaitForPixel:
                             {
                                 bool r = WaitForPixel(dic[(string)Actions[i].Arguments[0]], window, (Color)Actions[i].Arguments[1],
-                                    Actions[i].Arguments.Length > 2 ? (int)Actions[i].Arguments[2] : 0);
+                                    cancel, (Actions[i].Arguments.Length > 2) ? (int)Actions[i].Arguments[2] : 0);
                                 if (FailOnTimeout && !r) throw new TimeoutException();
                                 break;
                             }
@@ -161,11 +234,6 @@ namespace UIAutomationTool
                 return (int)ScenarioExitCodes.UnexpectedError;
             }
             return (int)ScenarioExitCodes.OK;
-        }
-
-        private bool BreakOutPressed()
-        {
-            return simulatorInstance.InputDeviceState.IsHardwareKeyDown(LoopBreakKey);
         }
     }
 
@@ -195,9 +263,22 @@ namespace UIAutomationTool
         /// For mouse click - the name of the point (in the database)
         /// For key press - WindowsInput.Native.VirtualKeyCode
         /// For sleep - int (ms)
-        /// For pixel color based waiting - point name and color (+ optional time limit)
+        /// For pixel color based waiting - point name, color, (optional time limit)
         /// </summary>
         [DataMember]  
         public object[] Arguments { get; private set; }
+    }
+
+    /// <summary>
+    /// Contains scenario exit code (int)
+    /// </summary>
+    public class ScenarioEventArgs : EventArgs
+    {
+        public ScenarioEventArgs(int code)
+        {
+            ExitCode = code;
+        }
+
+        public int ExitCode { get; }
     }
 }

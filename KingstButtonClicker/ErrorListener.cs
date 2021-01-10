@@ -24,17 +24,25 @@ namespace UIAutomationTool
             if (EnableMessages) MessageBox.Show(e.Message, e.GetType().ToString(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             if (EnableLog)
             {
-                try
+                int wait = 5;
+                while (wait > 0)
                 {
-                    File.AppendAllText(logFilePath,
-                        string.Format(LogLineFormat, DateTime.Now.ToString(LogDatetimeFormat), e.ToString()));
-                }
-                catch (Exception)
-                { }
-                finally
-                {
-                    if (EnableMessages) MessageBox.Show("Failed to save error log!",
-                        Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    try
+                    {
+                        File.AppendAllText(logFilePath,
+                            string.Format(LogLineFormat, DateTime.Now.ToString(LogDatetimeFormat), e.ToString()));
+                    }
+                    catch (IOException)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+                    catch (Exception)
+                    {
+                        if (EnableMessages) MessageBox.Show("Failed to save error log!",
+                            Application.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        break;
+                    }
+                    wait--;
                 }
             }
         }
