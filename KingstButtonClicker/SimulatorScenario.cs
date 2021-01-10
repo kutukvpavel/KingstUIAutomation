@@ -13,7 +13,9 @@ namespace UIAutomationTool
         MouseClick,
         PressKey,
         WaitForPixel,
-        Sleep
+        Sleep,
+        RightMouseClick,
+        LeftMouseDoubleClick
     }
 
     /// <summary>
@@ -49,6 +51,23 @@ namespace UIAutomationTool
             //InputSimulator somehow has effective resolution of 800x600, API import provides real resolution
             Native.SetCursorPosition(p.GetPoint(PointReference.TopLeft, w));
             simulatorInstance.Mouse.LeftButtonClick();
+        }
+
+        /// <summary>
+        /// See MouseClick
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="w"></param>
+        public static void RightMouseClick(ClickPoint p, Rectangle w)
+        {
+            Native.SetCursorPosition(p.GetPoint(PointReference.TopLeft, w));
+            simulatorInstance.Mouse.RightButtonClick();
+        }
+
+        public static void LeftMouseDoubleClick(ClickPoint p, Rectangle w)
+        {
+            Native.SetCursorPosition(p.GetPoint(PointReference.TopLeft, w));
+            simulatorInstance.Mouse.LeftButtonDoubleClick();
         }
 
         public static void PressKey(WindowsInput.Native.VirtualKeyCode code)
@@ -206,6 +225,12 @@ namespace UIAutomationTool
                     {
                         case ActionTypes.MouseClick:
                             MouseClick(dic[(string)Actions[i].Arguments[0]], window);
+                            break;
+                        case ActionTypes.RightMouseClick:
+                            RightMouseClick(dic[(string)Actions[i].Arguments[0]], window);
+                            break;
+                        case ActionTypes.LeftMouseDoubleClick:
+                            LeftMouseDoubleClick(dic[(string)Actions[i].Arguments[0]], window);
                             break;
                         case ActionTypes.PressKey:
                             PressKey((WindowsInput.Native.VirtualKeyCode)Actions[i].Arguments[0]);
