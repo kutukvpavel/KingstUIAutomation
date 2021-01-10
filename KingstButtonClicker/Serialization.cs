@@ -36,8 +36,14 @@ namespace UIAutomationTool
             }
             else
             {
-                if (MessageBox.Show("No window title file found. Continue with 'Example'?", Application.ProductName,
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No) throw new FileNotFoundException();
+                if (!Properties.Settings.Default.DisableWindowFilter)
+                {
+                    if (MessageBox.Show(
+                        "No window title file found. Continue with 'Example'?",
+                        Application.ProductName,
+                        MessageBoxButtons.YesNo, 
+                        MessageBoxIcon.Exclamation) == DialogResult.No) throw new FileNotFoundException();
+                }
             }
             return defaultValue;
         }

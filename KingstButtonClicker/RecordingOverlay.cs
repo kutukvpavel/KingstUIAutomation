@@ -160,7 +160,7 @@ namespace UIAutomationTool
                 {
                     if (MessageBox.Show(
                         "This point already exists. Overwrite?", 
-                        "Recording Overlay", 
+                        Application.ProductName, 
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Question) != DialogResult.Yes) return;
                     pointList.Remove(alreadyPresent);

@@ -298,7 +298,8 @@
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.enableMessagesToolStripMenuItem,
             this.enableLogToolStripMenuItem,
-            this.enablePipeOnStartupToolStripMenuItem});
+            this.enablePipeOnStartupToolStripMenuItem,
+            this.disableWindowFilterToolStripMenuItem});
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(74, 24);
             this.settingsToolStripMenuItem.Text = "Settings";
@@ -488,6 +489,9 @@
         private System.Windows.Forms.ToolStripMenuItem updateWindowTitleFromFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem activateWindowToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip trayContextMenuStrip;
+        private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem disableWindowFilterToolStripMenuItem;
     }
 }
 

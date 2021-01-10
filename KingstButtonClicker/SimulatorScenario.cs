@@ -152,38 +152,45 @@ namespace UIAutomationTool
         }
         private int ExecutionEngine(CancellationTokenSource cancel = null)
         {
-            //First, look for the window needed
-            IntPtr hWnd = IntPtr.Zero;
-            try
-            {
-                if (Program.WindowTitleString.StartsWith(Serialization.HandlePrefix))
-                {
-                    hWnd = (IntPtr)int.Parse(Program.WindowTitleString.Remove(0, Serialization.HandlePrefix.Length),
-                        System.Globalization.NumberStyles.HexNumber);
-                }
-                else
-                {
-                    hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorListener.Add(ex);
-            }
-            if (hWnd == IntPtr.Zero) return (int)ScenarioExitCodes.WindowNotFound;
-            //TODO: Next, try to bring it to front and make active
-
-            //Next, see if it's a 0x0 rectangle (still minimized or smth)
             Rectangle window = new Rectangle();
-            try
+            if (Properties.Settings.Default.DisableWindowFilter)
             {
-                window = Native.GetWindowRectangle(hWnd);
+                window = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
             }
-            catch (Exception ex)
+            else
             {
-                ErrorListener.Add(ex);
+                //First, look for the window needed
+                IntPtr hWnd = IntPtr.Zero;
+                try
+                {
+                    if (Program.WindowTitleString.StartsWith(Serialization.HandlePrefix))
+                    {
+                        hWnd = (IntPtr)int.Parse(Program.WindowTitleString.Remove(0, Serialization.HandlePrefix.Length),
+                            System.Globalization.NumberStyles.HexNumber);
+                    }
+                    else
+                    {
+                        hWnd = Native.FindWindowByCaption(Program.WindowTitleString);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorListener.Add(ex);
+                }
+                if (hWnd == IntPtr.Zero) return (int)ScenarioExitCodes.WindowNotFound;
+                //TODO: Next, try to bring it to front and make active
+
+                //Next, see if it's a 0x0 rectangle (still minimized or smth)
+                try
+                {
+                    window = Native.GetWindowRectangle(hWnd);
+                }
+                catch (Exception ex)
+                {
+                    ErrorListener.Add(ex);
+                }
+                if (window.IsEmpty) return (int)ScenarioExitCodes.EmptyWindow;
             }
-            if (window.IsEmpty) return (int)ScenarioExitCodes.EmptyWindow;
             //Finally, execute the scenario
             try
             {

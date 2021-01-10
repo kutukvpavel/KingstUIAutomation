@@ -33,6 +33,7 @@ namespace UIAutomationTool
             enableLogToolStripMenuItem.Checked = Settings.Default.EnableLog;
             enableMessagesToolStripMenuItem.Checked = Settings.Default.EnableMessages;
             enablePipeOnStartupToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
+            disableWindowFilterToolStripMenuItem.Checked = Settings.Default.DisableWindowFilter;
         }
 
         #region Non-UI events
@@ -344,7 +345,7 @@ namespace UIAutomationTool
 
         private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            Application.Exit();
+            exitToolStripMenuItem_Click(sender, e);
         }
 
         private void disableWindowFilterToolStripMenuItem_Click(object sender, EventArgs e)
