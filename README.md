@@ -15,9 +15,9 @@ Since Kingst doesn't offer any API to control acquisition (and KingstVIS is a Qt
 - Window search. I.e. the script won't be executed (will return corresponding non-zero exit code immediately) if a window with specified title can't be found. Window title is specified using title.txt file inside the working directory.
 - Some basic GUI.
 
-**Todo:**  Support non-maximized windows (a part of corresponding functionality is already in-place), add the ability to switch window oreder (Win32 API, since Vista it's a rather long way to go). Some GUI improvements. Probably add mouse wheel simulation and right/middle mouse buttons.
+**Todo:**  Support non-maximized windows (a part of corresponding functionality is already in-place), add the ability to switch window order (Win32 API, since Vista it's a rather long way to go). Some GUI improvements. Probably add mouse wheel simulation and right/middle mouse buttons.
 
-Known bug: for some reason Edge (and possibly Chrome, altogether) windows can't be found by their title. Handles work, though they change after reopening/reboot.
+**Known bugs:** for some reason Edge (and possibly Chrome, altogether) windows can't be found by their title. Handles work, though they change after reopening/reboot.
 
 **How to use**
 Build, create file title.txt in the working directory that contains target window caption (string) or handle (format: "hWnd:<HEX string, as in Spy++>", no angle brackets or quotes).
