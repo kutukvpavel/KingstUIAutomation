@@ -50,6 +50,16 @@ namespace UIAutomationTool
             };
             formForControls.Shown += FormForControls_Shown;
             formForControls.Paint += FormForControls_Paint;
+            captionLabel = new Label()
+            {
+                Text = string.Format(windowCaption, Enum.GetName(typeof(PointReference), currentReference)),
+                Margin = new Padding(3),
+                Left = 100,
+                AutoSize = true,
+                Font = new Font(FontFamily.GenericMonospace, 14, FontStyle.Bold),
+                ForeColor = ((SolidBrush)ReferenceToBrush(currentReference)).Color
+            };
+            formForControls.Controls.Add(captionLabel);
         }
 
         public ClickPoint[] Points
@@ -58,21 +68,72 @@ namespace UIAutomationTool
             {
                 return pointList.ToArray();
             }
+            set
+            {
+                pointList = value.ToList();
+                drawList.Clear();
+                foreach (var item in pointList)
+                {
+                    DrawPoint(item.Name, item.RawPoint, item.RawReference);
+                }
+            }
         }
 
         private List<DrawnPoint> drawList;
         private List<ClickPoint> pointList;
         private Form formForControls;
+        private Label captionLabel;
         private Graphics drawingContext;
         private PointReference currentReference = PointReference.TopLeft;
-        private static readonly string windowCaption = "Recording Overlay - Current coordinate system: {0}";
+        private static readonly string windowCaption = "{0}";
+
+        private void DrawPoint(string name, Point e, PointReference r)
+        {
+            var b = ReferenceToBrush(r);
+            //Set up a label
+            var lbl = new Label()
+            {
+                Text = name,
+                BackColor = Color.DarkMagenta,
+                Location = new Point(e.X - 10, e.Y + 10),
+                AutoSize = true,
+                ForeColor = ((SolidBrush)b).Color
+            };
+            formForControls.Controls.Add(lbl);
+            //Create redraw/undo data
+            drawList.Add(new DrawnPoint(
+                new Rectangle(e.X - 10, e.Y - 10, 20, 20),
+                new Rectangle(e.X - 5, e.Y - 5, 10, 10),
+                b,
+                new SolidBrush(Native.GetPixelColor(PointToScreen(e))),
+                lbl));
+            formForControls.Invalidate();
+        }
+
+        private Brush ReferenceToBrush(PointReference r)
+        {
+            switch (r)
+            {
+                case PointReference.TopLeft:
+                    return Brushes.Orange;
+                case PointReference.TopRight:
+                    return Brushes.Cyan;
+                case PointReference.BottomLeft:
+                    return Brushes.LightGreen;
+                case PointReference.BottomRight:
+                    return Brushes.Yellow;
+                default:
+                    return Brushes.Black;
+            }
+        }
 
         #region FormForControls events
 
         private void FormForControls_Shown(object sender, EventArgs e)
         {
             drawingContext = formForControls.CreateGraphics();
-            formForControls.Focus();
+            Focus();
+            //formForControls.Focus();
         }
 
         private void FormForControls_Paint(object sender, PaintEventArgs e)
@@ -90,29 +151,24 @@ namespace UIAutomationTool
         private void RecordingOverlay_MouseDown(object sender, MouseEventArgs e)
         {
             //Ask for the name if the point
-            var dialog = new InputBox() { Text = "Enter name for the point:" };
-            if (dialog.ShowDialog() == DialogResult.Cancel) return;
-            //Record the event
-            pointList.Add(new ClickPoint(PointToScreen(e.Location), PointReference.TopLeft, dialog.Value));
-            //Set up a label
-            var lbl = new Label()
+            using (var dialog = new InputBox() { Text = "Enter name for the point:" })
             {
-                Text = dialog.Value,
-                BackColor = Color.DarkMagenta,
-                Location = new Point(e.X - 10, e.Y + 10),
-                AutoSize = true
-            };
-            formForControls.Controls.Add(lbl);
-            //Create redraw/undo data
-            drawList.Add(new DrawnPoint(
-                new Rectangle(e.X - 10, e.Y - 10, 20, 20),
-                new Rectangle(e.X - 5, e.Y - 5, 10, 10),
-                Brushes.Red,
-                new SolidBrush(Native.GetPixelColor(PointToScreen(e.Location))),
-                lbl));
-            formForControls.Invalidate();
-            // ShowDialog doesn't dispose the InputBox
-            dialog.Dispose();
+                if (dialog.ShowDialog() == DialogResult.Cancel) return;
+                //Record the event
+                var alreadyPresent = pointList.FirstOrDefault(x => x.Name.Equals(dialog.Value));
+                if (alreadyPresent != null)
+                {
+                    if (MessageBox.Show(
+                        "This point already exists. Overwrite?", 
+                        "Recording Overlay", 
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question) != DialogResult.Yes) return;
+                    pointList.Remove(alreadyPresent);
+                    drawList.Remove(drawList.First(x => x.NameLabel.Text.Equals(dialog.Value)));
+                }
+                pointList.Add(new ClickPoint(PointToScreen(e.Location), currentReference, dialog.Value));
+                DrawPoint(dialog.Value, e.Location, currentReference);
+            }
         }
 
         private void RecordingOverlay_Load(object sender, EventArgs e)
@@ -124,31 +180,32 @@ namespace UIAutomationTool
 
         private void RecordingOverlay_Shown(object sender, EventArgs e)
         {
-            formForControls.Focus();
+            //formForControls.Focus();
         }
 
         private void RecordingOverlay_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.Control)
             {
-                if (e.KeyCode == Keys.None)
+                if (e.KeyCode == Keys.Z)
+                {
+                    var toRemove = drawList.Last();
+                    formForControls.Controls.Remove(toRemove.NameLabel);
+                    formForControls.Invalidate(toRemove.OuterRectangle);
+                    drawList.Remove(toRemove);
+                    pointList.RemoveAt(pointList.Count - 1);
+                }
+            }
+            else
+            {
+                if (e.Shift && (e.KeyCode == Keys.ShiftKey))
                 {
                     currentReference++;
                     if ((int)currentReference > Enum.GetValues(typeof(PointReference)).Length - 1)
                         currentReference = PointReference.TopLeft;
-                    Text = string.Format(windowCaption, Enum.GetName(typeof(PointReference), currentReference));
+                    captionLabel.Text = string.Format(windowCaption, Enum.GetName(typeof(PointReference), currentReference));
+                    captionLabel.ForeColor = ((SolidBrush)ReferenceToBrush(currentReference)).Color;
                 }
-                else
-                {
-                    if (e.KeyCode == Keys.Z)
-                    {
-                        var toRemove = drawList.Last();
-                        formForControls.Controls.Remove(toRemove.NameLabel);
-                        formForControls.Invalidate(toRemove.OuterRectangle);
-                        drawList.Remove(toRemove);
-                        pointList.RemoveAt(pointList.Count - 1);
-                    }
-                } 
             }
         }
 

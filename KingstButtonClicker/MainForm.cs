@@ -30,6 +30,7 @@ namespace UIAutomationTool
             enableLogToolStripMenuItem.Checked = Settings.Default.EnableLog;
             enableMessagesToolStripMenuItem.Checked = Settings.Default.EnableMessages;
             enablePipeOnStartupToolStripMenuItem.Checked = Settings.Default.EnablePipeClient;
+            disableWindowFilterToolStripMenuItem.Checked = Settings.Default.DisableWindowFilter;
             if (Settings.Default.EnablePipeClient)
             {
                 enablePipeClientToolStripMenuItem_Click(this, null);
@@ -69,10 +70,14 @@ namespace UIAutomationTool
 
         private void recordPointsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var form = new RecordingOverlay();
+            var form = new RecordingOverlay
+            {
+                Points = Program.Database.ToArray()
+            };
             Hide();
             form.ShowDialog();
             Show();
+            Program.Database.Clear();
             Program.Database.AddRange(form.Points);
             PrintDatabase();
         }
@@ -238,5 +243,15 @@ namespace UIAutomationTool
         }
 
         #endregion
+
+        private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void disableWindowFilterToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Settings.Default.DisableWindowFilter = disableWindowFilterToolStripMenuItem.Checked;
+        }
     }
 }
