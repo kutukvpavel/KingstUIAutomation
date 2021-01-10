@@ -81,6 +81,8 @@ namespace UIAutomationTool
         /// </summary>
         public static readonly SimulatorScenario ExampleScenario = new SimulatorScenario(
             new SimulatorAction(ActionTypes.MouseClick, "PointName"),
+            new SimulatorAction(ActionTypes.RightMouseClick, "PointName"),
+            new SimulatorAction(ActionTypes.LeftMouseDoubleClick, "PointName"),
             new SimulatorAction(ActionTypes.PressKey, WindowsInput.Native.VirtualKeyCode.RETURN),
             new SimulatorAction(ActionTypes.WaitForPixel, "PointName", Color.FromArgb(255, 35, 35, 35)),
             new SimulatorAction(ActionTypes.Sleep, 500)
